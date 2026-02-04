@@ -1,0 +1,46 @@
+[
+  {
+    "_id": "1",
+    "role": "ADMIN",
+    "policies": [
+      {
+        "effect": "ALLOW",
+        "action": "*",
+        "module": "*:*"
+      }
+    ]
+  },
+  {
+    "_id": "2",
+    "role": "ACCOUNTANT",
+    "policies": [
+      {
+        "effect": "ALLOW",
+        "action": "*",
+        "module": "module-a:*"
+      },
+      {
+        "effect": "ALLOW",
+        "action": "readOnly",
+        "module": "module-b:*"
+      }
+    ]
+  },
+  {
+    "_id": "3",
+    "role": "MANAGER",
+    "policies": [
+      {
+        "effect": "ALLOW",
+        "action": "*",
+        "module": ["module-a:*", "module-b:submodule-x"]
+      },
+      {
+        "effect": "ALLOW",
+        "action": "readOnly",
+        "scope": "scopeId",
+        "module": "module-b:submodule-y"
+      }
+    ]
+  }
+]
