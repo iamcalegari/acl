@@ -23,12 +23,12 @@
     "allowSyntheticDefaultImports": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["lib/*"]
+      "@/*": ["libs/*"]
     },
-    "typeRoots": ["lib/types", "./node_modules/@types"],
+    "typeRoots": ["libs/types", "./node_modules/@types"],
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true
   },
-  "include": ["lib/**/*", "api/**/*", "app/**/*", "./test/**/*"],
+  "include": ["libs/**/*", "api/**/*", "app/**/*", "./test/**/*"],
   "exclude": ["./node_modules/*", "./dist"]
 }
