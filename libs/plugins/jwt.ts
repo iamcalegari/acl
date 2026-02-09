@@ -1,5 +1,5 @@
 import { FastifyRequest } from 'fastify';
-import { AuthUser } from '../types/fastify';
+import { AuthUser } from '../../types/fastify';
 
 export async function jwtGuard(
   request: FastifyRequest

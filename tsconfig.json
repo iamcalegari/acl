@@ -29,6 +29,13 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true
   },
-  "include": ["libs/**/*", "api/**/*", "app/**/*", "./test/**/*"],
+  "include": [
+    "libs/**/*",
+    "api/**/*",
+    "app/**/*",
+    "./test/**/*",
+    "fastify",
+    "server/index.ts"
+  ],
   "exclude": ["./node_modules/*", "./dist"]
 }

@@ -1,5 +1,5 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
-import { ACLPolicy, CompiledPolicy, ParsedAclModule, PolicyAction, TargetModuleConfig } from '../types/fastify';
+import { ACLPolicy, CompiledPolicy, ParsedAclModule, PolicyAction, TargetModuleConfig } from '../../types/fastify';
 
 type HttpMethod = "GET" | "HEAD" | "OPTIONS" | "POST" | "PUT" | "PATCH" | "DELETE";
 

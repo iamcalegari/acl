@@ -1,5 +1,15 @@
-import { FastifyRequest } from 'fastify'
-import { GuardFunction, RoutesGuards } from '../../plugins/guards';
+
+import { FastifyRequest, FastifyReply } from 'fastify';
+import { FastifyJWT } from '@fastify/jwt';
+
+export type GuardFunction = ((request: FastifyRequest, reply: FastifyReply) => Promise<void>)
+  | ((request: FastifyRequest, reply?: FastifyReply) => Promise<void>)
+
+export type GuardName = "jwtGuard" | "aclGuard";
+
+export type RoutesGuards = {
+  [guardName in GuardName]: GuardFunction;
+};
 
 export type ACLRole = "ADMIN" | "CONTADOR" | "GESTOR";
 export type ACLPolicy = {
@@ -44,6 +54,7 @@ declare module '@fastify/jwt' {
     user: AuthUser;
   }
 }
+
 declare module "fastify" {
   interface FastifyRequest {
     user?: AuthUser;
@@ -56,4 +67,8 @@ declare module "fastify" {
 
   interface FastifyContextConfig extends Partial<ModuleConfig> { }
 
+  interface FastifyInstance extends RoutesGuards {
+    module(name: string): void;
+    subModule(name: string): void;
+  }
 }

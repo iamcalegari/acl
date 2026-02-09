@@ -1,6 +1,5 @@
 import { RouteOptions } from "fastify";
-import { GuardFunction, GuardName, RoutesGuards } from "../guards";
-import { ModuleConfig } from "../../types/fastify";
+import { GuardFunction, GuardName, ModuleConfig, RoutesGuards } from "../../../types/fastify";
 
 
 const PUBLIC_ROUTES = ['health', 'auth', 'public'];

@@ -1,4 +1,4 @@
-import { Server } from './server';
+import { Server } from '../libs/server';
 import path from 'path';
 
 const apiServer = new Server();

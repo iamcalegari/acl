@@ -1,6 +1,6 @@
 import { FastifyPluginAsync } from 'fastify';
-import { ACLPolicy, ACLRole, AuthUser, CompiledPolicy, ParsedAclModule, TargetModuleConfig } from '../../libs/types/fastify';
-import ACLs from './collection.acl.documents.json'
+import { ACLPolicy, ACLRole, AuthUser, CompiledPolicy, TargetModuleConfig } from '../../../types/fastify';
+import ACLs from './collection.acl.documents.json';
 
 export const accessTokenExpiresIn = Number(process.env.JWT_ACCESS_TOKEN_EXPIRES_IN ?? 60 * 5); // 5m
 export const definicaoSenhaTokenExpiresIn = Number(process.env.TOKEN_DEFINICAO_SENHA_EXPIRES_IN || 5 * 60);

@@ -1,8 +1,7 @@
-import type { FastifyPluginAsync, RouteOptions } from "fastify";
+import type { FastifyInstance, FastifyPluginAsync, RouteOptions } from "fastify";
 import fp from "fastify-plugin";
-import { RoutesGuards } from "./guards";
+import { RoutesGuards } from '../../types/fastify';
 import { setGuardsRoute } from "./helpers/route-visibility.helpers";
-import { FastifyInstance } from "fastify/types/instance";
 
 const kModuleName = Symbol("moduleName");
 const kSubModuleName = Symbol("subModuleName");
@@ -15,14 +14,14 @@ type ModuleConfig = {
   subModule?: string;
 }
 
+export interface FastifyModule {
+  [kModuleName]?: string;
+  [kSubModuleName]?: string;
+  [kHookInstalled]?: boolean;
+}
+
 declare module "fastify" {
-  interface FastifyInstance {
-    [kModuleName]?: string;
-    [kSubModuleName]?: string;
-    [kHookInstalled]?: boolean;
-    module(name: string): void;
-    subModule(name: string): void;
-  }
+  interface FastifyInstance extends FastifyModule { }
 }
 
 
