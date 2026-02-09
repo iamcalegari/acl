@@ -48,8 +48,6 @@ function actionMatches(policyAction: PolicyAction, requestAction: PolicyAction):
   return policyAction === requestAction;
 }
 
-
-
 export function getPoliciesCompiled(
   compiled: CompiledPolicy[],
   target: TargetModuleConfig
@@ -138,11 +136,13 @@ export async function aclGuard(request: FastifyRequest, reply: FastifyReply): Pr
   console.log('ACL GUARD', (request.routeOptions as any).config);
 
   const cfg = (request.routeOptions.config ?? {});
+
   if (!request.user || !request.user.acl) {
     return reply.code(401).send({ message: "Unauthorized" });
   }
 
   const target = getTargetFromRouteConfig(cfg);
+
   console.log('ACL TARGET:', target);
   console.log('USER POLICIES:', request.user.acl.policies);
 
