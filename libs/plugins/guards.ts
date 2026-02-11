@@ -16,7 +16,6 @@ async function registerDependency(target: FastifyInstance, name: string, item: P
     : target.plugins = { ...target.plugins, [name]: { plugin: item.plugin, scope: item.scope, type: item.type, registered: true, options: item.options } };
 
 
-  // opcional: log
   target.log?.info?.({ name, scope: item.scope }, "dependency registered");
 }
 

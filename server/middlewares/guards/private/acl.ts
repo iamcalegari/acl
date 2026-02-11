@@ -137,7 +137,8 @@ export async function aclGuard(request: FastifyRequest, reply: FastifyReply): Pr
 
   const cfg = (request.routeOptions.config ?? {});
 
-  if (!request.user || !request.user.acl) {
+  if (!request.acl) {
+    console.log('[ACL GUARD] USER ACL:', JSON.stringify(request.acl, null, 2));
     return reply.code(401).send({ message: "Unauthorized" });
   }
 
@@ -146,7 +147,7 @@ export async function aclGuard(request: FastifyRequest, reply: FastifyReply): Pr
   //  console.log('ACL TARGET:', target);
   //  console.log('USER POLICIES:', request.user.acl.policies);
 
-  const compiled = getPoliciesCompiled(request.user.acl.policies, target); // ideal: cache por user/aclId
+  const compiled = getPoliciesCompiled(request.acl.policies, target); // ideal: cache por user/aclId
   const decision = decideAccess(compiled, target, request.method as HttpMethod);
 
   if (!decision.allowed) {

@@ -1,10 +1,10 @@
 
-import { FastifyRequest, FastifyReply, FastifyPluginCallback, preHandlerHookHandler } from 'fastify';
 import { FastifyJWT } from '@fastify/jwt';
+import { FastifyPluginCallback, preHandlerHookHandler } from 'fastify';
 
 export type DependencyScope = "global" | "instance";
 
-export type GuardName = 'jwtGuard' | 'aclGuard';
+export type GuardName = 'jwtGuard' | 'aclGuard' | 'aclCache';
 
 export type GuardFunction = preHandlerHookHandler;
 
@@ -83,7 +83,7 @@ export interface ACL {
 
 export interface AuthUser {
   id: string;
-  acl?: ACL;
+  acl?: string;
 }
 declare module '@fastify/jwt' {
   interface FastifyJWT {
@@ -92,8 +92,13 @@ declare module '@fastify/jwt' {
   }
 }
 
+
+export interface FastifyACLCache {
+  acl?: ACLDocument;
+}
+
 declare module "fastify" {
-  interface FastifyRequest {
+  interface FastifyRequest extends FastifyACLCache {
     user?: AuthUser;
     jwtVerify: FastifyJWT["jwtVerify"];
   }

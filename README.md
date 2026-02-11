@@ -4,8 +4,8 @@ A ACL system for fastify
 
 ## TODO
 
-- [ ] Remover as policies compiladas do payload do jwt
-  - [ ] Passar as policies compiladas para um cache para cada user/aclId
+- [x] Remover as policies compiladas do payload do jwt
+  - [x] Passar as policies compiladas para um cache para cada user/aclId
 
 - [x] O que cada middleware faz deve ser definido na aplicaçao
 

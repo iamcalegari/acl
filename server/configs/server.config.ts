@@ -3,6 +3,7 @@ import path from 'path';
 import { ServerSetupOptions } from "../../types/fastify";
 import { aclGuard } from '../middlewares/guards/private/acl';
 import { jwtGuard } from '../middlewares/guards/private/jwt';
+import { aclCache } from '../middlewares/guards/private/acl-cache';
 
 const apiPath = path.resolve(__dirname, '../api');
 const publicPath = path.resolve(__dirname, '../public');
@@ -23,6 +24,9 @@ export const serverConfig: ServerSetupOptions = {
           }
         }
       ]
+    },
+    aclCache: {
+      guard: aclCache,
     },
     aclGuard: {
       guard: aclGuard,
