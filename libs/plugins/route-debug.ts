@@ -1,5 +1,5 @@
-import fp from "fastify-plugin";
 import type { FastifyPluginAsync, RouteOptions } from "fastify";
+import fp from "fastify-plugin";
 
 export const routeDebugPlugin: FastifyPluginAsync = fp(async (app) => {
 

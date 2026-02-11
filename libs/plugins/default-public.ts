@@ -1,7 +1,7 @@
 import type { FastifyPluginAsync, RouteOptions } from "fastify";
 import fp from "fastify-plugin";
-import { setGuardsRoute } from "./helpers/route-visibility.helpers";
 import { GuardName } from "../../types/fastify";
+import { setGuardsRoute } from "./helpers/route-visibility.helpers";
 
 
 export const defaultPublicPlugin: FastifyPluginAsync = fp(async (app, { force }: { force?: boolean } = {}) => {
