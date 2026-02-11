@@ -1,58 +1,6 @@
-import type { FastifyInstance, FastifyPluginAsync, FastifyPluginCallback } from "fastify";
+import type { FastifyInstance } from "fastify";
 import fp from "fastify-plugin";
-import { GuardName, RoutesGuardOptions, RoutesPluginOptions, ServerGuardOptions, ServerGuards } from "../../types/fastify";
-
-
-/**
- * Você disse que usa algo assim:
- * guards: {
- *   jwtGuard: { guard: fn, dependencies: [{ plugin: jwt, scope: "global", options: {...} }] },
- *   aclGuard: { guard: fn }
- * }
- */
-
-// Se seu types/fastify.ts já define isso, pode remover estas declarações locais.
-// Estou colocando aqui para ficar auto-contido.
-export type DependencyScope = "global" | "instance";
-
-export type GuardDependency = {
-  plugin: FastifyPluginCallback;
-  scope?: DependencyScope; // default instance
-  options?: Record<string, any>;
-  name?: string; // opcional: nome fixo
-};
-
-export type GuardDefinition = {
-  guard: (req: any, reply: any) => any | Promise<any>;
-  dependencies?: GuardDependency[];
-};
-
-type PluginsRegistryItem = {
-  plugin: FastifyPluginCallback;
-  scope: DependencyScope;
-  type: "dependency";
-  registered: boolean;
-  options: Record<string, any>;
-};
-
-type GuardsRegistryItem = {
-  preHandler: (req: any, reply: any) => any | Promise<any>;
-  type: "guard";
-  registered: boolean;
-  scope: "instance";
-};
-
-declare module "fastify" {
-  interface FastifyInstance {
-    guards: Record<string, GuardsRegistryItem>;
-    plugins: Record<string, PluginsRegistryItem>;
-  }
-}
-
-type GuardsPluginOpts = {
-  root: FastifyInstance;
-  guards: ServerGuards; // se seu type for diferente, ajuste aqui
-};
+import { DependencyScope, GuardDefinition, GuardDependency, GuardName, PluginsRegistryItem, ServerGuards } from "../../types/fastify";
 
 function normalizeName(dep: GuardDependency, guardName: string) {
   if (dep.name) return dep.name;
@@ -102,12 +50,12 @@ export const guardsPlugin = fp(
     if (!root.plugins) root.decorate("plugins", {});
 
     // 1) Registra guards (apenas metadados + preHandler guard)
-    for (const [guardName, def] of Object.entries(guards || {})) {
+    for (const [guardName, def] of Object.entries({ ...guards })) {
       const guardDef = def as GuardDefinition;
       const guard = guardDef.guard;
       const dependencies = guardDef.dependencies ?? [];
 
-      app.guards[guardName] = {
+      app.guards[guardName as GuardName] = {
         preHandler: guard,
         type: "guard",
         registered: true,

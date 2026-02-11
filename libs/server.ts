@@ -1,6 +1,6 @@
 import AutoLoad from "@fastify/autoload";
 import Fastify, { FastifyInstance } from "fastify";
-import { ServerGuards } from "../types/fastify";
+import { ServerGuards, ServerSetupOptions } from "../types/fastify";
 import { defaultPublicPlugin } from "./plugins/default-public";
 import { guardsPlugin } from "./plugins/guards";
 import { moduleNamingPlugin } from './plugins/module-naming';
@@ -20,8 +20,7 @@ export class Server {
     this.app = Fastify({ logger: true });
   }
 
-
-  public async init({ apiPath, publicPath, guards }: { apiPath: string, publicPath: string, guards: ServerGuards }): Promise<void> {
+  public async init({ apiPath, publicPath, guards }: ServerSetupOptions): Promise<void> {
     console.log("Setting up private routes on path: " + apiPath + "...");
     if (apiPath) await this.setupFastify(apiPath, { guardsOptions: guards, defaultPublicOptions: { force: true } });
     else console.warn("API path not provided. Skipping route setup...");

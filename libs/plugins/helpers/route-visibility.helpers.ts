@@ -1,5 +1,5 @@
-import { FastifyPluginCallback, RouteOptions } from "fastify";
-import { GuardFunction, GuardName, ModuleConfig, RoutesGuards } from "../../../types/fastify";
+import { RouteOptions } from "fastify";
+import { GuardFunction, GuardName, ModuleConfig } from "../../../types/fastify";
 
 
 // TODO: improve it

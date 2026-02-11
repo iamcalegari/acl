@@ -6,7 +6,6 @@ export async function jwtGuard(
 ): Promise<void> {
   try {
     //  console.warn('---- ---- ---- JWT GUARD ---- ---- ----',)
-    //  console.log('JWT', request.routeOptions)
 
     const auth = request.headers.authorization
 

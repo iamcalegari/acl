@@ -2,43 +2,51 @@
 import { FastifyRequest, FastifyReply, FastifyPluginCallback, preHandlerHookHandler } from 'fastify';
 import { FastifyJWT } from '@fastify/jwt';
 
-export type GuardFunction = ((request: FastifyRequest, reply: FastifyReply, next?: () => Promise<void> | void) => Promise<void>)
-  | ((request: FastifyRequest, reply?: FastifyReply, next?: () => Promise<void> | void) => Promise<void>)
-  | preHandlerHookHandler;
+export type DependencyScope = "global" | "instance";
 
-export type GuardName = "jwtGuard" | "aclGuard" | string;
+export type GuardName = 'jwtGuard' | 'aclGuard';
 
-export interface RoutesCommonOptions {
-  scope: "global" | "instance";
-  type: "guard" | "dependency";
-  registered: boolean;
-  options?: any;
-}
+export type GuardFunction = preHandlerHookHandler;
 
-export interface RoutesGuardOptions extends RoutesCommonOptions {
-  preHandler: GuardFunction | FastifyInstance;
-}
-
-export interface RoutesPluginOptions extends RoutesCommonOptions {
+export type GuardDependency = {
   plugin: FastifyPluginCallback;
-}
-
-export type RoutesGuards = {
-  guards?: Record<GuardName, RoutesGuardOptions>
-  plugins?: Record<GuardName, RoutesPluginOptions>
+  scope?: DependencyScope; // default instance
+  options?: Record<string, any>;
+  name?: string; // opcional: nome fixo
 };
 
-export interface ServerGuardOptions {
-  dependencies?: {
-    plugin: FastifyPluginCallback<any>;
-    scope?: "global" | "instance";
-    options?: any;
-  }[]
-  guard: GuardFunction | FastifyInstance;
+export type GuardDefinition = {
+  guard: GuardFunction;
+  dependencies?: GuardDependency[];
+};
+
+type PluginsRegistryItem = {
+  plugin: FastifyPluginCallback;
+  scope: DependencyScope;
+  type: "dependency";
+  registered: boolean;
+  options: Record<string, any>;
+};
+
+type GuardsRegistryItem = {
+  preHandler: GuardFunction;
+  type: "guard";
+  registered: boolean;
+  scope: "instance";
+};
+
+export type RoutesGuards = {
+  guards: Partial<Record<GuardName, GuardsRegistryItem>>;
+  plugins: Record<string, PluginsRegistryItem>;
+};
+
+export type ServerGuards = Partia<Record<GuardName, ServerGuardOptions>>;
+
+export interface ServerSetupOptions {
+  apiPath: string,
+  publicPath: string,
+  guards: ServerGuards
 }
-
-export type ServerGuards = Record<GuardName, ServerGuardOptions>;
-
 
 export type ACLRole = "ADMIN" | "CONTADOR" | "GESTOR";
 export type ACLPolicy = {
