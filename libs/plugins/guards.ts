@@ -1,142 +1,145 @@
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyPluginAsync, FastifyPluginCallback } from "fastify";
 import fp from "fastify-plugin";
 import { GuardName, RoutesGuardOptions, RoutesPluginOptions, ServerGuardOptions, ServerGuards } from "../../types/fastify";
 
 
-async function registerPlugin(target: FastifyInstance, name: string, plugin: any, scope: "global" | "instance", type: "guard" | "dependency", options: any) {
+/**
+ * Você disse que usa algo assim:
+ * guards: {
+ *   jwtGuard: { guard: fn, dependencies: [{ plugin: jwt, scope: "global", options: {...} }] },
+ *   aclGuard: { guard: fn }
+ * }
+ */
 
+// Se seu types/fastify.ts já define isso, pode remover estas declarações locais.
+// Estou colocando aqui para ficar auto-contido.
+export type DependencyScope = "global" | "instance";
 
-  await target.register(plugin, options);
+export type GuardDependency = {
+  plugin: FastifyPluginCallback;
+  scope?: DependencyScope; // default instance
+  options?: Record<string, any>;
+  name?: string; // opcional: nome fixo
+};
 
-  target.plugins
-    ? target.plugins = { ...target.plugins, [name]: { plugin, scope, type, registered: false, options: options || {} } }
-    : target.decorate('plugins', { [name]: { plugin, scope, type, registered: false, options: options || {} } });
-}
+export type GuardDefinition = {
+  guard: (req: any, reply: any) => any | Promise<any>;
+  dependencies?: GuardDependency[];
+};
 
-export async function registerGuardsPlugins(root: FastifyInstance, app: FastifyInstance) {
-  console.log("Registering guards plugin...");
-  console.log("Setting up guards plugin with plugins:", app.plugins);
+type PluginsRegistryItem = {
+  plugin: FastifyPluginCallback;
+  scope: DependencyScope;
+  type: "dependency";
+  registered: boolean;
+  options: Record<string, any>;
+};
 
-  const pluginsToRegister = Object.entries(app.plugins || {});
-  const dependencies = pluginsToRegister.filter(([_, cfg]) => cfg.type === "dependency");
+type GuardsRegistryItem = {
+  preHandler: (req: any, reply: any) => any | Promise<any>;
+  type: "guard";
+  registered: boolean;
+  scope: "instance";
+};
 
-  for (const [name, cfg] of dependencies) {
-    const target = cfg.scope === "global" ? root : app;
-    const targetName = cfg.scope === "global" ? "ROOT" : "APP";
-
-    console.log(`[${targetName}] Registering plugin: ${name}`);
-
-    if (cfg.registered) {
-      console.log(`[${targetName}] Dependency ${name} already registered, skipping...`);
-      continue;
-    }
-
-
-    await registerPlugin(target, name, cfg.plugin, cfg.scope, cfg.type, cfg.options);
-
-    // cfg.registered = true;
-    target.plugins![name].registered = true;
-
-    console.log(`[GLOBAL] Plugin ${name} registered successfully`);
-    console.log(`[GLOBAL] Current plugins state:`, root.plugins);
-
-    console.log(`[INSTANCE] Plugin ${name} registered successfully`);
-    console.log(`[INSTANCE] Current plugins state:`, app.plugins);
+declare module "fastify" {
+  interface FastifyInstance {
+    guards: Record<string, GuardsRegistryItem>;
+    plugins: Record<string, PluginsRegistryItem>;
   }
 }
 
-// async function registerPlugin(this: FastifyInstance, plugin: FastifyPluginCallback, config: Omit<RoutesCommonOptions, "registered"> & { name: string }) {
-//   const { name, scope, type } = config;
+type GuardsPluginOpts = {
+  root: FastifyInstance;
+  guards: ServerGuards; // se seu type for diferente, ajuste aqui
+};
 
-//   console.log(`Registering plugin in scope: ${scope}`);
+function normalizeName(dep: GuardDependency, guardName: string) {
+  if (dep.name) return dep.name;
+  const pluginFnName = dep.plugin?.name?.trim();
+  return pluginFnName && pluginFnName.length > 0 ? pluginFnName : `dep_for_${guardName}_${Math.random().toString(16).slice(2)}`;
+}
 
-//   if (scope === "global") {
-//     this.plugins
-//       ? this.plugins = { ...this.plugins, [name]: { plugin, scope, type, registered: false, options: config.options || {} } }
-//       : this.decorate('plugins', { [name]: { plugin, scope, type, registered: false, options: config.options || {} } });
-//   }
-
-//   await this.register(plugin, config.options);
-
-//   this.plugins![name].registered = true;
-
-//   console.log(`Plugin ${name} registered successfully`);
-//   console.log("Current plugins state:", this.plugins);
-// }
-
-// export async function registerGuardsPlugins(this: FastifyInstance, app: FastifyInstance) {
-//   console.log("Registering guards plugin...");
-//   console.log("Setting up guards plugin with plugins:", app.plugins);
-
-//   const pluginsToRegister = Object.entries(app.plugins || {});
-
-//   if (pluginsToRegister.length === 0) {
-//     console.log("No plugins to register");
-//     return;
-//   }
-
-//   const dependencies = pluginsToRegister.filter(([_, { type }]) => type === 'dependency');
-
-//   for (const [name, config] of dependencies) {
-//     console.log(`Registering plugin: ${name}`);
-
-//     const { plugin, registered, scope, type, options } = config;
-//     if (registered) {
-//       console.log(`Dependency ${name} already registered, skipping...`);
-//       continue;
-
-//     }
-//     console.log(`Registering dependency: ${name} in scope: ${scope}`);
-//     const target = scope === "global" ? this : app;
-//     await registerPlugin.bind(target)(plugin, { name, scope, type, options });
-//   }
-
-//   console.log("All guards registered:", Object.keys(app.guards || {}));
-//   console.log("All plugins registered:", Object.keys(app.plugins || {}));
-// }
+async function registerDependency(target: FastifyInstance, name: string, item: PluginsRegistryItem) {
+  // registra o plugin (dependency) no target
+  await target.register(item.plugin, item.options);
+  target.plugins[name]
+    ? target.plugins[name].registered = true
+    : target.plugins = { ...target.plugins, [name]: { plugin: item.plugin, scope: item.scope, type: item.type, registered: true, options: item.options } };
 
 
+  // opcional: log
+  target.log?.info?.({ name, scope: item.scope }, "dependency registered");
+}
 
-function registerGuards(target: FastifyInstance, guardsConfig: [GuardName, ServerGuardOptions][]) {
-  for (const [guardName, guardConfig] of guardsConfig) {
-    const { guard, dependencies = [] } = guardConfig;
+export async function registerGuardsDependencies(root: FastifyInstance, app: FastifyInstance) {
+  const pluginsMap = { ...root.plugins, ...app.plugins };
+  const entries = Object.entries(pluginsMap);
 
-    console.log(`Registering guard: ${guardName} with config:`, guardConfig);
+  if (entries.length === 0) return;
 
-    const guardDetails: RoutesGuardOptions = { preHandler: guard, scope: 'instance', type: "guard", registered: false }
+  // registra só dependencies (não guards)
+  for (const [name, item] of entries) {
+    if (item.type !== "dependency") continue;
 
-    target.guards
-      ? target.guards = { ...target.guards, [guardName]: guardDetails }
-      : target.decorate('guards', { [guardName]: guardDetails });
+    const isGlobal = item.scope === "global";
 
-    console.log(`Resolving dependencies for guard: ${guardName}`, dependencies);
+    if (!isGlobal && item.registered) continue;
 
-    for (const dependency of dependencies) {
-      const { plugin, scope = 'instance', options = {} } = dependency;
-
-      const pluginDetails: RoutesPluginOptions = { plugin: dependency.plugin, scope, type: "dependency", registered: false, options }
-
-      const depName = (plugin).name || `dependency_for_${guardName}`;
-
-      console.log(`Configuring dependency: ${depName} for guard: ${guardName}`);
-      target.plugins
-        ? target.plugins = { ...target.plugins, [depName]: pluginDetails }
-        : target.decorate('plugins', { [depName]: pluginDetails });
-    }
-
-    target.guards![guardName].registered = true;
-
-    console.log(`Guard ${guardName} configured successfully`);
+    await registerDependency(app, name, item);
+    console.log("Registered dependency:", name, "\nin scope:", item.scope, "\nisGlobal:", isGlobal, "\nRoot plugins:", root.plugins, "\nApp plugins:", app.plugins);
+    if (isGlobal) root.plugins[name].registered = true; // marca como registrado no root também
   }
 }
 
-export const guardsPlugin = fp(async (app, { root, guards }: { root: FastifyInstance, guards: ServerGuards }) => {
-  console.log("\n\nSetting up guards plugin with guards:", guards);
-  const guardsConfig = Object.entries(guards || {});
+export const guardsPlugin = fp(
+  async (app, { root, guards }: { root: FastifyInstance, guards: ServerGuards }) => {
 
-  registerGuards(app, guardsConfig);
+    // garante registries
+    if (!app.guards) app.decorate("guards", {});
+    if (!app.plugins) app.decorate("plugins", {});
+    if (!root.guards) root.decorate("guards", {});
+    if (!root.plugins) root.decorate("plugins", {});
 
-  await registerGuardsPlugins(root, app);
+    // 1) Registra guards (apenas metadados + preHandler guard)
+    for (const [guardName, def] of Object.entries(guards || {})) {
+      const guardDef = def as GuardDefinition;
+      const guard = guardDef.guard;
+      const dependencies = guardDef.dependencies ?? [];
 
-  console.log("All guards registered:", Object.keys(app.guards || {}), "\n\n");
-});
+      app.guards[guardName] = {
+        preHandler: guard,
+        type: "guard",
+        registered: true,
+        scope: "instance",
+      };
+
+      // 2) Enfileira dependências (não registra aqui ainda)
+      for (const dep of dependencies) {
+        const scope: DependencyScope = dep.scope ?? "instance";
+        const name = normalizeName(dep, guardName);
+
+        // se já existir, respeita o primeiro (evita sobrescrever config)
+        if (app.plugins[name] || root.plugins[name]) continue;
+
+
+        const target = scope === "global" ? root : app;
+
+        target.plugins[name] = {
+          plugin: dep.plugin,
+          scope,
+          type: "dependency",
+          registered: false,
+          options: dep.options ?? {},
+        };
+      }
+    }
+
+    // 3) Agora registra dependências no target correto
+    // global -> root, instance -> app
+    await registerGuardsDependencies(root, app);
+  },
+  {
+    name: "guardsPlugin",
+  }
+);

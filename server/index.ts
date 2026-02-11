@@ -25,7 +25,6 @@ apiServer.init({
     },
     aclGuard: {
       guard: aclGuard,
-
     }
   }
 }).then(() => {
