@@ -22,7 +22,7 @@ const schema = {
 const usersMap = new Map<string, { email: string } & AuthUser>([])
 
 export const login: FastifyPluginAsync = async (fastify) => {
-  fastify.post('/login', { schema }, async ({ body }, reply) => {
+  fastify.post('/login', { schema }, async ({ body, routeOptions }, reply) => {
     const { email, acl: aclId, id } = body as any;
 
     try {
@@ -42,17 +42,17 @@ export const login: FastifyPluginAsync = async (fastify) => {
         }
       }
 
-      const accessToken = await reply.jwtSign(payload, {
+      const accessToken = fastify.jwt.sign(payload, {
         expiresIn: accessTokenExpiresIn,
         jti: crypto.randomUUID(),
         sub: id,
       });
 
-      console.log('USER ACL:', JSON.stringify(payload.acl, null, 2));
+      //  console.log('USER ACL:', JSON.stringify(payload.acl, null, 2));
 
       usersMap.set(id, { ...payload, email });
 
-      console.log('USERS MAP:', JSON.stringify({ ...usersMap }, null, 2));
+      //  console.log('USERS MAP:', JSON.stringify({ ...usersMap }, null, 2));
 
 
       return {
@@ -62,6 +62,7 @@ export const login: FastifyPluginAsync = async (fastify) => {
           email: email,
         },
         accessTokenExpiresIn,
+        routeOptions
       };
     } catch (error) {
       throw error;
@@ -87,7 +88,7 @@ function toArray<T>(v: T | T[]): T[] {
 export function compilePolicies(policies: ACLPolicy[], separator = ":"): CompiledPolicy[] {
   if (policies.length === 0) return [];
 
-  console.log('COMPILE POLICIES', JSON.stringify(policies, null, 2));
+  //  console.log('COMPILE POLICIES', JSON.stringify(policies, null, 2));
   return policies.map((p) => {
     return {
       ...p,

@@ -1,16 +1,9 @@
 import { FastifyPluginAsync } from 'fastify'
+import { checkModule } from './check';
 
-const healthRoute: FastifyPluginAsync = async (fastify) => {
-  fastify.get('/health', async (_, res) => {
-    res.status(200).send({
-      status: 'ok',
-      data: _.routeOptions
-    })
-  })
-}
 
 const healthCheck: FastifyPluginAsync = async (fastify) => {
-  await fastify.register(healthRoute); // PUBLICA
+  await fastify.register(checkModule); // PUBLICA
 }
 
 export default healthCheck;

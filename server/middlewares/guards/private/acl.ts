@@ -1,5 +1,5 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
-import { ACLPolicy, CompiledPolicy, ParsedAclModule, PolicyAction, TargetModuleConfig } from '../../types/fastify';
+import { ACLPolicy, CompiledPolicy, ParsedAclModule, PolicyAction, TargetModuleConfig } from '../../../../types/fastify';
 
 type HttpMethod = "GET" | "HEAD" | "OPTIONS" | "POST" | "PUT" | "PATCH" | "DELETE";
 
@@ -74,7 +74,7 @@ export function decideAccess(
 
   for (const p of compiled) {
     // action match
-    console.log('POLICY ACTIONS:', p.__actions);
+    //  console.log('POLICY ACTIONS:', p.__actions);
 
     const pActions = new Set(p.__actions);
 
@@ -132,8 +132,8 @@ function matchesModule(
 
 export async function aclGuard(request: FastifyRequest, reply: FastifyReply): Promise<void> {
 
-  console.log('ACL GUARD', request.routeOptions);
-  console.log('ACL GUARD', (request.routeOptions as any).config);
+  //  console.log('ACL GUARD', request.routeOptions);
+  //  console.log('ACL GUARD', (request.routeOptions as any).config);
 
   const cfg = (request.routeOptions.config ?? {});
 
@@ -143,8 +143,8 @@ export async function aclGuard(request: FastifyRequest, reply: FastifyReply): Pr
 
   const target = getTargetFromRouteConfig(cfg);
 
-  console.log('ACL TARGET:', target);
-  console.log('USER POLICIES:', request.user.acl.policies);
+  //  console.log('ACL TARGET:', target);
+  //  console.log('USER POLICIES:', request.user.acl.policies);
 
   const compiled = getPoliciesCompiled(request.user.acl.policies, target); // ideal: cache por user/aclId
   const decision = decideAccess(compiled, target, request.method as HttpMethod);

@@ -1,11 +1,12 @@
 import { FastifyRequest } from 'fastify';
-import { AuthUser } from '../../types/fastify';
+import { AuthUser } from '../../../../types/fastify';
 
 export async function jwtGuard(
   request: FastifyRequest
 ): Promise<void> {
   try {
-    console.log('JWT', request.routeOptions)
+    //  console.warn('---- ---- ---- JWT GUARD ---- ---- ----',)
+    //  console.log('JWT', request.routeOptions)
 
     const auth = request.headers.authorization
 

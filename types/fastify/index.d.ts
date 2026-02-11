@@ -1,15 +1,44 @@
 
-import { FastifyRequest, FastifyReply } from 'fastify';
+import { FastifyRequest, FastifyReply, FastifyPluginCallback, preHandlerHookHandler } from 'fastify';
 import { FastifyJWT } from '@fastify/jwt';
 
-export type GuardFunction = ((request: FastifyRequest, reply: FastifyReply) => Promise<void>)
-  | ((request: FastifyRequest, reply?: FastifyReply) => Promise<void>)
+export type GuardFunction = ((request: FastifyRequest, reply: FastifyReply, next?: () => Promise<void> | void) => Promise<void>)
+  | ((request: FastifyRequest, reply?: FastifyReply, next?: () => Promise<void> | void) => Promise<void>)
+  | preHandlerHookHandler;
 
-export type GuardName = "jwtGuard" | "aclGuard";
+export type GuardName = "jwtGuard" | "aclGuard" | string;
+
+export interface RoutesCommonOptions {
+  scope: "global" | "instance";
+  type: "guard" | "dependency";
+  registered: boolean;
+  options?: any;
+}
+
+export interface RoutesGuardOptions extends RoutesCommonOptions {
+  preHandler: GuardFunction | FastifyInstance;
+}
+
+export interface RoutesPluginOptions extends RoutesCommonOptions {
+  plugin: FastifyPluginCallback;
+}
 
 export type RoutesGuards = {
-  [guardName in GuardName]: GuardFunction;
+  guards?: Record<GuardName, RoutesGuardOptions>
+  plugins?: Record<GuardName, RoutesPluginOptions>
 };
+
+export interface ServerGuardOptions {
+  dependencies?: {
+    plugin: FastifyPluginCallback<any>;
+    scope?: "global" | "instance";
+    options?: any;
+  }[]
+  guard: GuardFunction | FastifyInstance;
+}
+
+export type ServerGuards = Record<GuardName, ServerGuardOptions>;
+
 
 export type ACLRole = "ADMIN" | "CONTADOR" | "GESTOR";
 export type ACLPolicy = {
@@ -27,7 +56,7 @@ export type CompiledPolicy = ACLPolicy & {
   __actions: Set<PolicyAction> | PolicyAction[];
 };
 export interface ModuleConfig {
-  guards: Set<keyof RoutesGuards>;
+  guards: Set<GuardName>;
   module?: string;
   subModule?: string;
   isPublic?: boolean;
