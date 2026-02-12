@@ -45,7 +45,11 @@ export const login: FastifyPluginAsync = async (fastify) => {
           email: email,
         },
         accessTokenExpiresIn,
-        routeOptions
+        ...routeOptions,
+        config: {
+          ...routeOptions.config,
+          guards: [...(routeOptions.config.guards || new Set())]
+        }
       };
     } catch (error) {
       throw error;

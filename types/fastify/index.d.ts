@@ -2,7 +2,9 @@
 import { FastifyJWT } from '@fastify/jwt';
 import { FastifyPluginCallback, preHandlerHookHandler } from 'fastify';
 
-export type DependencyScope = "global" | "instance";
+export type PluginScope = "global" | "instance";
+
+export type DependencyScope = PluginScope;
 
 export type GuardName = 'jwtGuard' | 'aclGuard' | 'aclCache';
 
@@ -17,12 +19,13 @@ export type GuardDependency = {
 
 export type GuardDefinition = {
   guard: GuardFunction;
+  scope?: PluginScope;
   dependencies?: GuardDependency[];
 };
 
 type PluginsRegistryItem = {
   plugin: FastifyPluginCallback;
-  scope: DependencyScope;
+  scope: PluginScope;
   type: "dependency";
   registered: boolean;
   options: Record<string, any>;
@@ -32,7 +35,7 @@ type GuardsRegistryItem = {
   preHandler: GuardFunction;
   type: "guard";
   registered: boolean;
-  scope: "instance";
+  scope: PluginScope;
 };
 
 export type RoutesGuards = {
@@ -40,7 +43,7 @@ export type RoutesGuards = {
   plugins: Record<string, PluginsRegistryItem>;
 };
 
-export type ServerGuards = Partia<Record<GuardName, ServerGuardOptions>>;
+export type ServerGuards = Partial<Record<GuardName, ServerGuardOptions>>;
 
 export interface ServerSetupOptions {
   apiPath: string,

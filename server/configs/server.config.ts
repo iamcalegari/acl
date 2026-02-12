@@ -15,6 +15,7 @@ export const serverConfig: ServerSetupOptions = {
   guards: {
     jwtGuard: {
       guard: jwtGuard,
+      scope: "global",
       dependencies: [
         {
           plugin: jwt,

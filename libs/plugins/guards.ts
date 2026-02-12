@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import fp from "fastify-plugin";
-import { DependencyScope, GuardDefinition, GuardDependency, GuardName, PluginsRegistryItem, ServerGuards } from "../../types/fastify";
+import { DependencyScope, GuardDefinition, GuardDependency, GuardName, GuardsRegistryItem, PluginsRegistryItem, ServerGuards } from "../../types/fastify";
 
 function normalizeName(dep: GuardDependency, guardName: string) {
   if (dep.name) return dep.name;
@@ -41,25 +41,31 @@ export async function registerGuardsDependencies(root: FastifyInstance, app: Fas
 
 export const guardsPlugin = fp(
   async (app, { root, guards }: { root: FastifyInstance, guards: ServerGuards }) => {
-
     // garante registries
-    if (!app.guards) app.decorate("guards", {});
-    if (!app.plugins) app.decorate("plugins", {});
     if (!root.guards) root.decorate("guards", {});
+    if (!app.guards) app.decorate("guards", {});
+
     if (!root.plugins) root.decorate("plugins", {});
+    if (!app.plugins) app.decorate("plugins", {});
 
     // 1) Registra guards (apenas metadados + preHandler guard)
     for (const [guardName, def] of Object.entries({ ...guards })) {
       const guardDef = def as GuardDefinition;
       const guard = guardDef.guard;
       const dependencies = guardDef.dependencies ?? [];
+      const scope = guardDef.scope ?? "instance";
 
-      app.guards[guardName as GuardName] = {
+      // // se já existir, respeita o primeiro (evita sobrescrever config)
+      if (app.guards[guardName as GuardName] || root.guards[guardName as GuardName]) continue;
+
+      const guardCfg: GuardsRegistryItem = {
         preHandler: guard,
         type: "guard",
         registered: true,
-        scope: "instance",
-      };
+        scope: scope,
+      }
+
+      app.guards[guardName as GuardName] = guardCfg;
 
       // 2) Enfileira dependências (não registra aqui ainda)
       for (const dep of dependencies) {

@@ -16,14 +16,14 @@ export const setGuardsRoute = (route: RouteOptions, routeGuards: Partial<RouteGu
     return { ...cfg, isPublic: true };
   }
 
-  const { alreadyGuards: newAlreadyGuards, guardsToSet } = setupGuards(routeGuards, cfg.guards, guards);
+  const { guardsToSet, alreadyGuards: newAlreadyGuards, } = setupGuards(routeGuards, cfg.guards, guards);
 
   guards = guardsToSet;
-  setGuards(route, Array.from(guards));
+  const { config: newConfig } = setGuards(route, Array.from(guards));
 
-  //  console.log('SET GUARDS: ', JSON.stringify({ ...cfg, guards: [...newAlreadyGuards] }, null, 2), 'FOR ROUTE: ', url);
+  // console.log('[SET GUARDS] new CONFIG: ', JSON.stringify({ ...newConfig, guards: [...newAlreadyGuards], isPublic: false }, null, 2), 'FOR ROUTE: ', url);
 
-  return { ...cfg, guards: newAlreadyGuards, isPublic: false };
+  return { ...newConfig, guards: newAlreadyGuards, isPublic: false };
 }
 
 const setupGuards = (guards: Partial<RouteGuardsPlugins> = {}, alreadyGuards: Set<GuardName>, guardsToSet: Set<GuardFunction>) => {
@@ -55,6 +55,10 @@ export const setGuards = (routeOptions: RouteOptions, guards: GuardFunction | Gu
 // TODO: improve it
 const needsGuards = (route: RouteOptions, force?: boolean) => {
   const { url, config: { isPublic, ...cfg } } = route as { url: string, config: ModuleConfig };
+
+  if (typeof isPublic === "boolean" && !isPublic) {
+    return { ...cfg, url, isPublic };
+  }
 
   const routePrefix = url.split('/')[1];
 
