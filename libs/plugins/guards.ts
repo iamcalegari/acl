@@ -4,8 +4,9 @@ import { DependencyScope, GuardDefinition, GuardDependency, GuardName, GuardsReg
 
 function normalizeName(dep: GuardDependency, guardName: string) {
   if (dep.name) return dep.name;
-  const pluginFnName = dep.plugin?.name?.trim();
-  return pluginFnName && pluginFnName.length > 0 ? pluginFnName : `dep_for_${guardName}_${Math.random().toString(16).slice(2)}`;
+
+  const fnName = dep.plugin?.name?.trim();
+  return fnName && fnName.length > 0 ? fnName : `dep_for_${guardName}_${Math.random().toString(16).slice(2)}`;
 }
 
 async function registerDependency(target: FastifyInstance, name: string, item: PluginsRegistryItem) {
@@ -34,7 +35,9 @@ export async function registerGuardsDependencies(root: FastifyInstance, app: Fas
     if (!isGlobal && item.registered) continue;
 
     await registerDependency(app, name, item);
-    console.log("Registered dependency:", name, "\nin scope:", item.scope, "\nisGlobal:", isGlobal, "\nRoot plugins:", root.plugins, "\nApp plugins:", app.plugins);
+
+    // console.log("Registered dependency:", name, "\nin scope:", item.scope, "\nisGlobal:", isGlobal, "\nRoot plugins:", root.plugins, "\nApp plugins:", app.plugins);
+
     if (isGlobal) root.plugins[name].registered = true; // marca como registrado no root também
   }
 }
@@ -51,12 +54,39 @@ export const guardsPlugin = fp(
     // 1) Registra guards (apenas metadados + preHandler guard)
     for (const [guardName, def] of Object.entries({ ...guards })) {
       const guardDef = def as GuardDefinition;
-      const guard = guardDef.guard;
+      let guard = [guardDef.guard];
       const dependencies = guardDef.dependencies ?? [];
       const scope = guardDef.scope ?? "instance";
 
       // // se já existir, respeita o primeiro (evita sobrescrever config)
       if (app.guards[guardName as GuardName] || root.guards[guardName as GuardName]) continue;
+
+      // 2) Enfileira dependências (não registra aqui ainda)
+      for (const { options, ...dep } of dependencies) {
+        const { middlewares, plugin } = dep;
+
+        const scope: DependencyScope = dep.scope ?? "instance";
+        const name = normalizeName(dep, guardName);
+
+        if (middlewares) {
+          const middlewaresArray = Array.isArray(middlewares) ? middlewares : [middlewares];
+
+          guard = [...middlewaresArray, ...guard];
+        }
+
+        // se já existir, respeita o primeiro (evita sobrescrever config)
+        if (!plugin || app.plugins[name]) continue;
+
+        const target = scope === "global" ? root : app;
+
+        target.plugins[name] = {
+          plugin: plugin,
+          scope,
+          type: "dependency",
+          registered: false,
+          options: options ?? {},
+        };
+      }
 
       const guardCfg: GuardsRegistryItem = {
         preHandler: guard,
@@ -66,26 +96,6 @@ export const guardsPlugin = fp(
       }
 
       app.guards[guardName as GuardName] = guardCfg;
-
-      // 2) Enfileira dependências (não registra aqui ainda)
-      for (const dep of dependencies) {
-        const scope: DependencyScope = dep.scope ?? "instance";
-        const name = normalizeName(dep, guardName);
-
-        // se já existir, respeita o primeiro (evita sobrescrever config)
-        if (app.plugins[name] || root.plugins[name]) continue;
-
-
-        const target = scope === "global" ? root : app;
-
-        target.plugins[name] = {
-          plugin: dep.plugin,
-          scope,
-          type: "dependency",
-          registered: false,
-          options: dep.options ?? {},
-        };
-      }
     }
 
     // 3) Agora registra dependências no target correto

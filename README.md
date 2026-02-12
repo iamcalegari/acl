@@ -14,7 +14,7 @@ A ACL system for fastify
 
 - [ ] Alterar para nome middlewares
 
-- [ ] Colocar defaults nos "guards"/middlewares para evitar parametrizar demais
+- [x] Colocar defaults nos "guards"/middlewares para evitar parametrizar demais
 
 - [ ] Incluir enums para: actions, effects e modules. Vamos simplificar e colocar actions = metodos HTTP (1:1), para facilitar correllação em manutenções.
 

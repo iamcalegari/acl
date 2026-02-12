@@ -5,7 +5,7 @@ import { GuardFunction, GuardName, ModuleConfig } from "../../../types/fastify";
 // TODO: improve it
 const PUBLIC_ROUTES = ['health', 'auth', 'public'];
 
-export type RouteGuardsPlugins = Record<GuardName, GuardFunction>;
+export type RouteGuardsPlugins = Record<GuardName, GuardFunction[] | GuardFunction>;
 
 export const setGuardsRoute = (route: RouteOptions, routeGuards: Partial<RouteGuardsPlugins>, force?: boolean): ModuleConfig => {
   let guards = new Set<GuardFunction>();
@@ -27,11 +27,17 @@ export const setGuardsRoute = (route: RouteOptions, routeGuards: Partial<RouteGu
 }
 
 const setupGuards = (guards: Partial<RouteGuardsPlugins> = {}, alreadyGuards: Set<GuardName>, guardsToSet: Set<GuardFunction>) => {
-  const guardsArr = Object.entries(guards) as [GuardName, GuardFunction][];
+  const guardsArr = Object.entries(guards) as [GuardName, GuardFunction[] | GuardFunction][]
 
   for (const [guardName, guardFn] of guardsArr) {
     if (!alreadyGuards.has(guardName)) {
-      guardsToSet.add(guardFn);
+
+      if (Array.isArray(guardFn)) {
+        guardFn.forEach(fn => guardsToSet.add(fn));
+      } else {
+        guardsToSet.add(guardFn);
+      }
+
       alreadyGuards.add(guardName);
     }
   }

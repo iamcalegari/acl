@@ -6,12 +6,14 @@ export type PluginScope = "global" | "instance";
 
 export type DependencyScope = PluginScope;
 
-export type GuardName = 'jwtGuard' | 'aclGuard' | 'aclCache';
+export type GuardName = 'jwtGuard' | 'aclGuard';
+export type MiddlewareName = 'aclCache';
 
 export type GuardFunction = preHandlerHookHandler;
 
 export type GuardDependency = {
-  plugin: FastifyPluginCallback<any>;
+  plugin?: FastifyPluginCallback<any>;
+  middlewares?: preHandlerHookHandler | preHandlerHookHandler[];
   scope?: DependencyScope; // default instance
   options?: Record<string, any>;
   name?: string; // opcional: nome fixo
@@ -32,7 +34,7 @@ type PluginsRegistryItem = {
 };
 
 type GuardsRegistryItem = {
-  preHandler: GuardFunction;
+  preHandler: GuardFunction | GuardFunction[];
   type: "guard";
   registered: boolean;
   scope: PluginScope;

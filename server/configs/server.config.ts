@@ -33,11 +33,14 @@ export const serverConfig: ServerSetupOptions = {
         }
       ]
     },
-    aclCache: {
-      guard: aclCache,
-    },
     aclGuard: {
       guard: aclGuard,
+      scope: "instance",
+      dependencies: [
+        {
+          middlewares: aclCache,
+        }
+      ]
     },
   },
 } as const;

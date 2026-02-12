@@ -73,10 +73,10 @@ export const moduleNamingPlugin: FastifyPluginAsync<ModuleConfig> = fp(async (fa
         subModule: current.subModule ?? subModule,
       };
 
-      const { jwtGuard, aclCache, aclGuard } = fastify?.guards || {};
+      const { jwtGuard, aclGuard } = fastify?.guards || {};
 
       //  console.log('moduleNamingPlugin applying guards for route', routeOptions.url, { module, subModule, guards: current.guards });
-      routeOptions.config = setGuardsRoute(routeOptions, { jwtGuard: jwtGuard?.preHandler, aclCache: aclCache?.preHandler, aclGuard: aclGuard?.preHandler });
+      routeOptions.config = setGuardsRoute(routeOptions, { jwtGuard: jwtGuard?.preHandler, aclGuard: aclGuard?.preHandler });
     })
   }
 
