@@ -56,7 +56,7 @@ export const setGuards = (routeOptions: RouteOptions, guards: GuardFunction | Gu
 const needsGuards = (route: RouteOptions, force?: boolean) => {
   const { url, config: { isPublic, ...cfg } } = route as { url: string, config: ModuleConfig };
 
-  if (typeof isPublic === "boolean" && !isPublic) {
+  if (typeof isPublic === "boolean") {
     return { ...cfg, url, isPublic };
   }
 
