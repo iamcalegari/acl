@@ -73,9 +73,6 @@ export function decideAccess(
   let bestDeny: { score: number; policy: ACLPolicy } | null = null;
 
   for (const p of compiled) {
-    // action match
-    //  console.log('POLICY ACTIONS:', p.__actions);
-
     const pActions = new Set(p.__actions);
 
     const pAction = [...pActions][0]; // (por enquanto é 1 ação)
@@ -116,6 +113,7 @@ function getTargetFromRouteConfig(cfg: any): TargetModuleConfig {
     subModule: cfg.subModule ?? "*",
   };
 }
+
 function matchesModule(
   target: TargetModuleConfig,
   rule: ParsedAclModule
@@ -129,12 +127,7 @@ function matchesModule(
   return subOk;
 }
 
-
 export async function aclGuard(request: FastifyRequest, reply: FastifyReply): Promise<void> {
-
-  //  console.log('ACL GUARD', request.routeOptions);
-  //  console.log('ACL GUARD', (request.routeOptions as any).config);
-
   const cfg = (request.routeOptions.config ?? {});
 
   if (!request.acl) {
@@ -143,9 +136,6 @@ export async function aclGuard(request: FastifyRequest, reply: FastifyReply): Pr
   }
 
   const target = getTargetFromRouteConfig(cfg);
-
-  //  console.log('ACL TARGET:', target);
-  //  console.log('USER POLICIES:', request.user.acl.policies);
 
   const compiled = getPoliciesCompiled(request.acl.policies, target); // ideal: cache por user/aclId
   const decision = decideAccess(compiled, target, request.method as HttpMethod);

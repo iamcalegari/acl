@@ -2,8 +2,8 @@ import jwt from "@fastify/jwt";
 import path from 'path';
 import { ServerSetupOptions } from "../../types/fastify";
 import { aclGuard } from '../middlewares/guards/private/acl';
-import { jwtGuard } from '../middlewares/guards/private/jwt';
 import { aclCache } from '../middlewares/guards/private/acl-cache';
+import { jwtGuard } from '../middlewares/guards/private/jwt';
 
 const apiPath = path.resolve(__dirname, '../api');
 const publicPath = path.resolve(__dirname, '../public');
@@ -31,6 +31,7 @@ export const serverConfig: ServerSetupOptions = {
     },
     aclGuard: {
       guard: aclGuard,
-    }
-  }
+    },
+  },
+  // allowRouteControl: false, // TODO
 } as const;
