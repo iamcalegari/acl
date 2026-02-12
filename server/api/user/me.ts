@@ -2,7 +2,7 @@ import { FastifyPluginAsync } from "fastify"
 
 export const me: FastifyPluginAsync = async (fastify) => {
   fastify.get('/user/me',
-    { config: { isPublic: false } },  // isPublic: false ==> JWT
+    // { config: { isPublic: false } },  // isPublic: false ==> JWT
     async ({ user, routeOptions }, res) => {
       res.status(200).send({
         status: 'ok',
