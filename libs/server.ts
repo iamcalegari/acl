@@ -1,15 +1,18 @@
 import AutoLoad from "@fastify/autoload";
 import Fastify, { FastifyInstance } from "fastify";
-import { ServerGuards, ServerSetupOptions } from "../types/fastify";
+import { RouteConfig, RouteOptions, ServerGuards, ServerSetupOptions } from "../types/fastify";
 import { defaultPublicPlugin } from "./plugins/default-public";
 import { guardsPlugin } from "./plugins/guards";
 import { moduleNamingPlugin } from './plugins/module-naming';
+
+export type SetupRoutesOptions = Omit<RouteConfig, 'path'>
 
 export interface SetupFastifyOptions {
   guardsOptions?: ServerGuards,
   defaultPublicOptions?: {
     force?: boolean
-  }
+  },
+  routeOptions?: SetupRoutesOptions
 }
 
 export class Server {
@@ -20,14 +23,29 @@ export class Server {
     this.app = Fastify({ logger: true });
   }
 
-  public async init({ apiPath, publicPath, guards }: ServerSetupOptions): Promise<void> {
-    console.log("Setting up private routes on path: " + apiPath + "...");
-    if (apiPath) await this.setupFastify(apiPath, { guardsOptions: guards, defaultPublicOptions: { force: true } });
-    else console.warn("API path not provided. Skipping route setup...");
+  public async init({ apiRoutes, publicRoutes, guards }: ServerSetupOptions): Promise<void> {
+    console.log("Setting up private routes on path: " + apiRoutes?.path + "...");
+    if (apiRoutes) {
+      const { path, allowRouteControl, options } = apiRoutes;
 
-    console.log("Setting up public routes on path: " + publicPath + "...");
-    if (publicPath) await this.setupFastify(publicPath, { defaultPublicOptions: { force: false } });
-    else console.warn("Public path not provided. Skipping route setup...");
+      await this.setupFastify(path,
+        {
+          routeOptions: { allowRouteControl, options },
+          guardsOptions: guards,
+          defaultPublicOptions: { force: true }
+        }
+      );
+    } else console.warn("API path not provided. Skipping route setup...");
+
+    console.log("Setting up public routes on path: " + publicRoutes?.path + "...");
+    if (publicRoutes) {
+      const { path, allowRouteControl, options } = publicRoutes;
+
+      await this.setupFastify(path, {
+        routeOptions: { allowRouteControl, options },
+        defaultPublicOptions: { force: false }
+      });
+    } else console.warn("Public path not provided. Skipping route setup...");
   }
 
   public getApp(): FastifyInstance {
@@ -40,13 +58,13 @@ export class Server {
     });
   }
 
-  private async setRoutes(app: FastifyInstance, routesPath: string) {
+  private async setRoutes(app: FastifyInstance, routesPath: string, { options }: { options?: RouteOptions } = {}) {
     console.log(`Registering routes from path: ${routesPath}...`);
-    await app.register(AutoLoad, { dir: routesPath, dirNameRoutePrefix: false, maxDepth: 3, autoHooks: true, cascadeHooks: true });
+    await app.register(AutoLoad, { dir: routesPath, dirNameRoutePrefix: false, maxDepth: 3, autoHooks: true, cascadeHooks: true, ...options });
   }
 
 
-  private async setPlugins(app: FastifyInstance, guardsOptions: ServerGuards, defaultPublicOptions: Parameters<typeof defaultPublicPlugin>[1] = {}) {
+  private async setPlugins(app: FastifyInstance, guardsOptions: ServerGuards, defaultPublicOptions: Parameters<typeof defaultPublicPlugin>[1] = {}, routeOptions?: SetupRoutesOptions) {
     console.log(`Registering guards ${Object.keys(guardsOptions).join(', ')} plugins...`);
     await app.register(guardsPlugin, {
       root: this.app,           // passa a instância global para o plugin de guards
@@ -60,12 +78,12 @@ export class Server {
     await app.register(moduleNamingPlugin);                          // injeta nas rotas marcadas
   }
 
-  private async setupFastify(routesPath: string, { guardsOptions, defaultPublicOptions }: SetupFastifyOptions = {}) {
+  private async setupFastify(routesPath: string, { routeOptions, guardsOptions, defaultPublicOptions }: SetupFastifyOptions = {}) {
     await this.app.register(async (app) => {
 
-      await this.setPlugins(app, guardsOptions || {}, defaultPublicOptions);
+      await this.setPlugins(app, guardsOptions || {}, defaultPublicOptions, routeOptions);
 
-      await this.setRoutes(app, routesPath);
+      await this.setRoutes(app, routesPath, { options: routeOptions?.options });
     })
   }
 

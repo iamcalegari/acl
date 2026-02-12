@@ -45,9 +45,23 @@ export type RoutesGuards = {
 
 export type ServerGuards = { [key in GuardName]?: GuardDefinition };
 
-export interface ServerSetupOptions {
-  apiPath: string,
-  publicPath: string,
+export type RoutesTypes = "apiRoutes" | "publicRoutes";
+
+export type RouteOptions = {
+  prefix?: string;
+}
+
+export type RouteConfig = {
+  path: string,
+  allowRouteControl?: boolean;
+  options?: RouteOptions
+}
+
+export type RoutesConfig = {
+  [routes in RoutesTypes]?: RouteConfig
+}
+
+export interface ServerSetupOptions extends RoutesConfig {
   guards: ServerGuards
 }
 
