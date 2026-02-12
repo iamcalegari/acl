@@ -1,7 +1,8 @@
 import type { FastifyInstance, FastifyPluginAsync, RouteOptions } from "fastify";
 import fp from "fastify-plugin";
-import { RoutesGuards } from '../../types/fastify';
+import { RoutesGuards, SetupRoutesPluginOptions } from '../../types/fastify';
 import { setGuardsRoute } from "./helpers/route-visibility.helpers";
+import { getRouteConfig } from "./helpers/route-config.helpers";
 
 const kModuleName = Symbol("moduleName");
 const kSubModuleName = Symbol("subModuleName");
@@ -12,6 +13,7 @@ type ModuleConfig = {
   isPublic?: boolean;
   module?: string;
   subModule?: string;
+  options?: SetupRoutesPluginOptions
 }
 
 export interface FastifyModule {
@@ -25,11 +27,11 @@ declare module "fastify" {
 }
 
 
-export const moduleNamingPlugin: FastifyPluginAsync<ModuleConfig> = fp(async (fastify) => {
+export const moduleNamingPlugin: FastifyPluginAsync<ModuleConfig> = fp(async (fastify, { options }: { options?: SetupRoutesPluginOptions } = {}) => {
 
   if (fastify[kHookInstalled] || fastify[kModuleName] !== undefined || fastify[kSubModuleName] !== undefined) {
-    //  console.log(`Module: ${fastify[kModuleName]} \nSubModule: ${fastify[kSubModuleName]}`);
-    //  console.warn("moduleNamingPlugin already installed");
+    console.log(`Module: ${fastify[kModuleName]} \nSubModule: ${fastify[kSubModuleName]}`);
+    console.warn("moduleNamingPlugin already installed");
     return;
   }
 
@@ -40,20 +42,19 @@ export const moduleNamingPlugin: FastifyPluginAsync<ModuleConfig> = fp(async (fa
   function ensureHook(fastify: FastifyInstance) {
 
     if (fastify[kHookInstalled]) return;
+
     fastify[kHookInstalled] = true;
 
     fastify.addHook("onRoute", (routeOptions: RouteOptions) => {
-      const current = (routeOptions.config ?? {}) as Required<ModuleConfig>;
-      //  console.log({ url: routeOptions.url, route: routeOptions, config: current }, "registered");
+      const current = getRouteConfig(routeOptions, options);
 
-      //  console.log('moduleNamingPlugin onRoute', routeOptions);
-
-      const module = fastify[kModuleName] as string | undefined;
-      const subModule = fastify[kSubModuleName] as string | undefined;
+      const module = fastify[kModuleName] || current.module || '*' as string;
+      const subModule = fastify[kSubModuleName] || current.subModule || '*' as string;
 
       // Se o plugin NÃO definiu module/subModule nesse escopo:
       // => default é rota pública (isPublic: true), sem mexer em module/subModule.
       if (!module && !subModule) return;
+
       // se a rota foi explicitamente marcada como pública, respeita
       if (current.isPublic === true) {
         // Manter module/subModule para logs/observabilidade:
@@ -79,17 +80,14 @@ export const moduleNamingPlugin: FastifyPluginAsync<ModuleConfig> = fp(async (fa
     })
   }
 
-  fastify.decorate("module", function (this: any, name: string) {
-    //  console.log('moduleNamingPlugin [module]', name);
 
+  fastify.decorate("module", function (this: any, name: string) {
     fastify[kModuleName] = name;
     // this[kSubModuleName] = undefined; // opcional: reset subModule
     ensureHook(this);
   });
 
   fastify.decorate("subModule", function (this: any, name: string) {
-    //  console.log('moduleNamingPlugin [subModule]', name);
-
     fastify[kSubModuleName] = name;
     ensureHook(this);
   });

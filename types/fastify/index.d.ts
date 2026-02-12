@@ -51,11 +51,12 @@ export type RouteOptions = {
   prefix?: string;
 }
 
+export type SetupRoutesPluginOptions = { allowRouteControl?: boolean; }
+
 export type RouteConfig = {
   path: string,
-  allowRouteControl?: boolean;
   options?: RouteOptions
-}
+} & SetupRoutesPluginOptions;
 
 export type RoutesConfig = {
   [routes in RoutesTypes]?: RouteConfig

@@ -12,14 +12,14 @@ const publicPath = path.resolve(__dirname, '../public');
 export const serverConfig: ServerSetupOptions = {
   apiRoutes: {
     path: apiPath,
-    allowRouteControl: true,
+    allowRouteControl: false,
     options: {
       prefix: '/api',
     },
   },
   publicRoutes: {
     path: publicPath,
-    allowRouteControl: true,
+    allowRouteControl: false,
   },
   guards: {
     jwtGuard: {
