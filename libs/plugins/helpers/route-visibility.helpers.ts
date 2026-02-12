@@ -3,7 +3,7 @@ import { GuardFunction, GuardName, ModuleConfig } from "../../../types/fastify";
 
 
 // TODO: improve it
-const PUBLIC_ROUTES = ['health', 'auth', 'public', 'debug-jwt'];
+const PUBLIC_ROUTES = ['health', 'auth', 'public'];
 
 export type RouteGuardsPlugins = Record<GuardName, GuardFunction>;
 
@@ -70,5 +70,5 @@ const needsGuards = (route: RouteOptions, force?: boolean) => {
     return { ...cfg, url, isPublic: true };
   }
 
-  return { ...cfg, url, isPublic: false };
+  return { ...cfg, url, isPublic: isPublic ?? false };
 }
