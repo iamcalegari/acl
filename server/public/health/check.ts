@@ -1,7 +1,7 @@
 import { FastifyPluginAsync } from 'fastify'
 
 export const checkModule: FastifyPluginAsync = async (fastify) => {
-  fastify.get('/health', { config: { isPublic: false } }, async ({ routeOptions }, res) => {
+  fastify.get('/health', async ({ routeOptions }, res) => {
     res.status(200).send({
       status: 'ok',
       data: {
