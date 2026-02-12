@@ -26,7 +26,7 @@ export class Server {
   public async init({ apiRoutes, publicRoutes, guards }: ServerSetupOptions): Promise<void> {
     console.log("Setting up private routes on path: " + apiRoutes?.path + "...");
     if (apiRoutes) {
-      const { path, allowRouteControl, options } = apiRoutes;
+      const { path, allowRouteControl = false, options } = apiRoutes;
 
       await this.setupFastify(path,
         {
@@ -39,7 +39,7 @@ export class Server {
 
     console.log("Setting up public routes on path: " + publicRoutes?.path + "...");
     if (publicRoutes) {
-      const { path, allowRouteControl, options } = publicRoutes;
+      const { path, allowRouteControl = false, options } = publicRoutes;
 
       await this.setupFastify(path, {
         routeOptions: { allowRouteControl, options },
