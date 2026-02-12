@@ -11,7 +11,7 @@ export type GuardName = 'jwtGuard' | 'aclGuard' | 'aclCache';
 export type GuardFunction = preHandlerHookHandler;
 
 export type GuardDependency = {
-  plugin: FastifyPluginCallback;
+  plugin: FastifyPluginCallback<any>;
   scope?: DependencyScope; // default instance
   options?: Record<string, any>;
   name?: string; // opcional: nome fixo
@@ -43,7 +43,7 @@ export type RoutesGuards = {
   plugins: Record<string, PluginsRegistryItem>;
 };
 
-export type ServerGuards = Partial<Record<GuardName, ServerGuardOptions>>;
+export type ServerGuards = { [key in GuardName]?: GuardDefinition };
 
 export interface ServerSetupOptions {
   apiPath: string,

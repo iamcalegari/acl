@@ -30,12 +30,13 @@
     "emitDecoratorMetadata": true
   },
   "include": [
-    "test/**/*",
     "api/**/*",
     "app/**/*",
     "fastify",
     "libs/**/*",
-    "server/**/*"
+    "server/**/*",
+    "test/**/*",
+    "types/**/*"
   ],
   "exclude": ["./node_modules/*", "./dist"]
 }

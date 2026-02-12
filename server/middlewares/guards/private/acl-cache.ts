@@ -39,21 +39,18 @@ export function compilePolicies(policies: ACLPolicy[], separator = ":"): Compile
 }
 
 const getFromCache = (aclId: string): ACLDocument | null => {
-  console.log(`[ACL CACHE] getting [${aclId}] from CACHE`);
-
   const cached = policiesCache.get(aclId);
 
   if (!cached) return null;
 
-
   policiesCache.delete(aclId);
   policiesCache.set(aclId, cached);
 
+  console.log(`[ACL CACHE] getting ACL: [${aclId} - ${cached.role}] from CACHE`);
   return cached;
 }
 
 const getFromSource = (aclId: string): ACLDocument | null => {
-  console.log(`[ACL CACHE] getting [${aclId}] from SOURCE`);
 
   const acl = ACLs.find(acl => acl._id === aclId);
 
@@ -68,6 +65,8 @@ const getFromSource = (aclId: string): ACLDocument | null => {
   }
 
   policiesCache.set(aclId, policies);
+
+  console.log(`[ACL CACHE] getting ACL: [${aclId} - ${policies.role}] from SOURCE`);
 
   return policies;
 }
