@@ -73,6 +73,10 @@ const getFromSource = (aclId: string): ACLDocument | null => {
 
 
 export async function aclCache(request: FastifyRequest, reply: FastifyReply): Promise<void> {
+  request.routeOptions.config.debugMiddlewares
+    ? request.routeOptions.config.debugMiddlewares.add('aclCache')
+    : request.routeOptions.config.debugMiddlewares = new Set(['aclCache']);
+
   const { user: { id, acl: aclId } } = request;
 
   if (!request.user || !aclId) {

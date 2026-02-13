@@ -128,6 +128,12 @@ function matchesModule(
 }
 
 export async function aclGuard(request: FastifyRequest, reply: FastifyReply): Promise<void> {
+
+  request.routeOptions.config.debugMiddlewares
+    ? request.routeOptions.config.debugMiddlewares.add('aclGuard')
+    : request.routeOptions.config.debugMiddlewares = new Set(['aclGuard']);
+
+
   const cfg = (request.routeOptions.config ?? {});
 
   if (!request.acl) {

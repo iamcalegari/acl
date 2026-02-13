@@ -6,7 +6,7 @@
     "target": "es2019",
     "moduleResolution": "node",
     "module": "CommonJS",
-    "lib": ["es2019"],
+    "lib": ["es2019", "ESNext"],
     "skipLibCheck": true,
     "sourceMap": true,
     "outDir": "dist",

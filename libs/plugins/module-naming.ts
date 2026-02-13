@@ -27,29 +27,29 @@ declare module "fastify" {
 }
 
 
-export const moduleNamingPlugin: FastifyPluginAsync<ModuleConfig> = fp(async (fastify, { options }: { options?: SetupRoutesPluginOptions } = {}) => {
+export const moduleNamingPlugin: FastifyPluginAsync<ModuleConfig> = fp(async (app, { options }: { options?: SetupRoutesPluginOptions } = {}) => {
 
-  if (fastify[kHookInstalled] || fastify[kModuleName] !== undefined || fastify[kSubModuleName] !== undefined) {
-    console.log(`Module: ${fastify[kModuleName]} \nSubModule: ${fastify[kSubModuleName]}`);
+  if (app[kHookInstalled] || app[kModuleName] !== undefined || app[kSubModuleName] !== undefined) {
+    console.log(`Module: ${app[kModuleName]} \nSubModule: ${app[kSubModuleName]}`);
     console.warn("moduleNamingPlugin already installed");
     return;
   }
 
-  fastify.decorate(kModuleName, undefined);
-  fastify.decorate(kSubModuleName, undefined);
-  fastify.decorate(kHookInstalled, false);
+  app.decorate(kModuleName, undefined);
+  app.decorate(kSubModuleName, undefined);
+  app.decorate(kHookInstalled, false);
 
-  function ensureHook(fastify: FastifyInstance) {
+  function ensureHook(app: FastifyInstance) {
 
-    if (fastify[kHookInstalled]) return;
+    if (app[kHookInstalled]) return;
 
-    fastify[kHookInstalled] = true;
+    app[kHookInstalled] = true;
 
-    fastify.addHook("onRoute", (routeOptions: RouteOptions) => {
+    app.addHook("onRoute", (routeOptions: RouteOptions) => {
       const current = getRouteConfig(routeOptions, options);
 
-      const module = fastify[kModuleName] || current.module || '*' as string;
-      const subModule = fastify[kSubModuleName] || current.subModule || '*' as string;
+      const module = app[kModuleName] || current.module || '*' as string;
+      const subModule = app[kSubModuleName] || current.subModule || '*' as string;
 
       // Se o plugin NÃO definiu module/subModule nesse escopo:
       // => default é rota pública (isPublic: true), sem mexer em module/subModule.
@@ -73,22 +73,22 @@ export const moduleNamingPlugin: FastifyPluginAsync<ModuleConfig> = fp(async (fa
         subModule: current.subModule ?? subModule,
       };
 
-      const { jwtGuard, aclGuard } = fastify?.guards || {};
+      const { jwtGuard, aclGuard } = app?.guards || {};
 
       //  console.log('moduleNamingPlugin applying guards for route', routeOptions.url, { module, subModule, guards: current.guards });
-      routeOptions.config = setGuardsRoute(routeOptions, { jwtGuard: jwtGuard?.preHandler, aclGuard: aclGuard?.preHandler });
+      routeOptions.config = setGuardsRoute(app, routeOptions, { jwtGuard: jwtGuard?.preHandler, aclGuard: aclGuard?.preHandler });
     })
   }
 
 
-  fastify.decorate("module", function (this: any, name: string) {
-    fastify[kModuleName] = name;
+  app.decorate("module", function (this: any, name: string) {
+    app[kModuleName] = name;
     // this[kSubModuleName] = undefined; // opcional: reset subModule
     ensureHook(this);
   });
 
-  fastify.decorate("subModule", function (this: any, name: string) {
-    fastify[kSubModuleName] = name;
+  app.decorate("subModule", function (this: any, name: string) {
+    app[kSubModuleName] = name;
     ensureHook(this);
   });
 });
