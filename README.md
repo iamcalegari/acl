@@ -12,7 +12,7 @@ A ACL system for fastify
 - [x] Separar rotas publicas e privadas por pastas.
   - [x] Garantir que falhas de segurança não serão introduzidas durante fluxo de desenvolvimento
 
-- [ ] Alterar para nome middlewares
+- [x] Alterar para nome middlewares
 
 - [x] Colocar defaults nos "guards"/middlewares para evitar parametrizar demais
 
