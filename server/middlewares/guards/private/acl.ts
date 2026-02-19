@@ -128,6 +128,11 @@ function matchesModule(
 }
 
 export async function aclGuard(request: FastifyRequest, reply: FastifyReply): Promise<void> {
+  const { method, url, user } = request;
+  const userId = user?.id || 'Guest';
+
+  console.log(`\n\n[ACL GUARD] ${method} ${url} - User: ${userId}`);
+
 
   request.routeOptions.config.debugMiddlewares
     ? request.routeOptions.config.debugMiddlewares.add('aclGuard')

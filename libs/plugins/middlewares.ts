@@ -1,114 +1,127 @@
-import type { FastifyInstance } from "fastify";
 import fp from "fastify-plugin";
-import { GuardFunction, MiddlewaresRegistryItem, ServerMiddlewares } from "../../types/fastify";
-import { normalizeDependencyName, registerGuardsDependencies } from "./helpers/plugin.helpers";
-import { setMiddlewares } from "./helpers/route-visibility.helpers";
+import type { FastifyInstance, FastifyPluginAsync, RouteOptions as FRouteOptions } from "fastify";
+import type { GuardFunction, MiddlewareDefinition, PluginScope } from "../../types/fastify";
 
+type Strategy = "beforeAllGuards" | "afterAllGuards";
 
-const kHookInstalled = Symbol("moduleName");
-export interface FastifyModule {
-  [kHookInstalled]?: boolean;
-  afterAllMiddlewares?: GuardFunction[];
-  beforeAllMiddlewares?: GuardFunction[];
-}
+type MiddlewaresPluginOpts = {
+  root: FastifyInstance;
+  middlewares?: MiddlewareDefinition[];
+};
+
+const toArray = <T>(v: T | T[] | undefined): T[] =>
+  v === undefined ? [] : Array.isArray(v) ? v : [v];
+
+const isFn = (x: unknown): x is GuardFunction => typeof x === "function";
+
+const uniqKeepOrder = <T>(arr: T[]) => {
+  const seen = new Set<T>();
+  const out: T[] = [];
+  for (const x of arr) {
+    if (!seen.has(x)) {
+      seen.add(x);
+      out.push(x);
+    }
+  }
+  return out;
+};
 
 declare module "fastify" {
-  interface FastifyInstance extends FastifyModule { }
+  interface FastifyInstance {
+    __mwGlobalBefore?: GuardFunction[];
+    __mwGlobalAfter?: GuardFunction[];
+    __mwInstanceBefore?: GuardFunction[];
+    __mwInstanceAfter?: GuardFunction[];
+    __mwScopeHookInstalled?: boolean;
+  }
 }
 
-export const middlewaresPlugin = fp(async (app, { root, middlewares }: { root: FastifyInstance, middlewares: ServerMiddlewares[] }) => {
-  if (app[kHookInstalled]) {
-    console.warn("middlewaresPlugin already installed");
-    return;
-  }
+function bucketize(mws: MiddlewareDefinition[] = []) {
+  const gBefore: GuardFunction[] = [];
+  const gAfter: GuardFunction[] = [];
+  const iBefore: GuardFunction[] = [];
+  const iAfter: GuardFunction[] = [];
 
-  app.decorate(kHookInstalled, false);
+  for (const mw of mws) {
+    const scope: PluginScope = mw.scope ?? "instance";
+    const strategy: Strategy = mw.strategy ?? "afterAllGuards";
+    const handlers = toArray(mw.handlers).filter(isFn);
+    if (handlers.length === 0) continue;
 
-  // garante registries
-  if (!root.middlewares) root.decorate("middlewares", {});
-  if (!app.middlewares) app.decorate("middlewares", {});
-
-  if (!root.beforeAllMiddlewares) root.decorate("beforeAllMiddlewares", []);
-  if (!app.beforeAllMiddlewares) app.decorate("beforeAllMiddlewares", []);
-
-  if (!root.afterAllMiddlewares) root.decorate("afterAllMiddlewares", []);
-  if (!app.afterAllMiddlewares) app.decorate("afterAllMiddlewares", []);
-
-
-  if (!Array.isArray(middlewares) || middlewares.length === 0) {
-    console.log("No middlewares to register.");
-  }
-
-  // 1) Registra middlewares (apenas metadados + handlers)
-  for (const middleware of middlewares) {
-    const middlewareName = (middleware.name || `middleware_${Object.keys(app.middlewares).length + 1}`);
-
-    const { dependencies = [], scope = "instance", strategy = "afterAllGuards" } = middleware;
-
-    let globalHandlers = root.middlewares ? Object.values(root.middlewares).map(m => m?.handlers) : [] as any[];
-    let handlers = Array.isArray(middleware.handlers) ? middleware.handlers : [middleware.handlers];
-
-
-    // // se já existir, respeita o primeiro (evita sobrescrever config)
-    if (app.middlewares[middlewareName] || root.middlewares[middlewareName]) {
-      continue;
-    };
-
-    const target = scope === "global" ? root : app;
-
-    // 2) Enfileira dependências (não registra aqui ainda)
-    for (const { options, ...dep } of dependencies) {
-      const { middlewares, plugin, scope = "instance" } = dep;
-
-      const name = normalizeDependencyName(dep, middlewareName);
-
-      if (middlewares) {
-        const middlewaresArray = Array.isArray(middlewares) ? middlewares : [middlewares];
-
-        handlers = [...middlewaresArray, ...handlers];
-      }
-
-      // se já existir, respeita o primeiro (evita sobrescrever config)
-      if (!plugin || app.plugins[name]) continue;
-
-      const target = scope === "global" ? root : app;
-
-      target.plugins[name] = {
-        plugin: plugin,
-        scope,
-        type: "dependency",
-        registered: false,
-        options: options ?? {},
-      };
-    }
-
-    const middlewareCfg: MiddlewaresRegistryItem = {
-      handlers: [...globalHandlers, ...handlers],
-      type: "middleware",
-      registered: false,
-      strategy,
-      scope: scope,
-    }
-
-    target.middlewares[middlewareName] = middlewareCfg;
-
-    if (strategy === "beforeAllGuards") {
-      target.beforeAllMiddlewares ? target.beforeAllMiddlewares.push(...middlewareCfg.handlers) : target.beforeAllMiddlewares = [middlewareCfg.handlers].flat();
+    if (scope === "global") {
+      (strategy === "beforeAllGuards" ? gBefore : gAfter).push(...handlers);
     } else {
-      target.afterAllMiddlewares ? target.afterAllMiddlewares.push(...middlewareCfg.handlers) : target.afterAllMiddlewares = [middlewareCfg.handlers].flat();
+      (strategy === "beforeAllGuards" ? iBefore : iAfter).push(...handlers);
     }
   }
 
-  // 3) Agora registra dependências no target correto
-  // global -> root, instance -> app
-  await registerGuardsDependencies(root, app);
+  return { gBefore, gAfter, iBefore, iAfter };
+}
 
-  // Agora adiciona hook para aplicar middlewares nas rotas
-  app.addHook('onRoute', async (routeOptions) => {
-    setMiddlewares(app, routeOptions);
-  });
-},
-  {
-    name: "middlewaresPlugin",
+function applyToRoute(route: FRouteOptions, before: GuardFunction[], after: GuardFunction[]) {
+  const existing = toArray(route.preHandler).filter(isFn);
+  const edgeSet = new Set<GuardFunction>([...before, ...after]);
+  const core = existing.filter((fn) => !edgeSet.has(fn));
+  route.preHandler = uniqKeepOrder([...before, ...core, ...after]);
+}
+
+const hasOwn = (obj: object, key: PropertyKey) =>
+  Object.prototype.hasOwnProperty.call(obj, key);
+
+function ensureOwnArray<T extends object>(obj: T, key: keyof T) {
+  if (!hasOwn(obj, key)) {
+    // @ts-expect-error - criando propriedade dinamicamente
+    obj[key] = [];
   }
+  return obj[key] as unknown as any[];
+}
+
+function ensureOwnBool<T extends object>(obj: T, key: keyof T, initial = false) {
+  if (!hasOwn(obj, key)) {
+    // @ts-expect-error
+    obj[key] = initial;
+  }
+  return obj[key] as boolean;
+}
+
+export const middlewaresPlugin: FastifyPluginAsync<MiddlewaresPluginOpts> = fp(
+  async (app: FastifyInstance, opts: MiddlewaresPluginOpts) => {
+    const { root, middlewares = [] } = opts;
+
+    // ✅ garante arrays como OWN PROPERTY (evita “vazar” instance entre escopos)
+    ensureOwnArray(root, "__mwGlobalBefore");
+    ensureOwnArray(root, "__mwGlobalAfter");
+    ensureOwnArray(app, "__mwInstanceBefore");
+    ensureOwnArray(app, "__mwInstanceAfter");
+    ensureOwnBool(app, "__mwScopeHookInstalled", false);
+
+    const { gBefore, gAfter, iBefore, iAfter } = bucketize(middlewares);
+
+    // globais no root
+    root.__mwGlobalBefore!.push(...gBefore);
+    root.__mwGlobalAfter!.push(...gAfter);
+
+    // instance no escopo atual (own)
+    app.__mwInstanceBefore!.push(...iBefore);
+    app.__mwInstanceAfter!.push(...iAfter);
+
+    if (!app.__mwScopeHookInstalled) {
+      app.__mwScopeHookInstalled = true;
+
+      app.addHook("onRoute", (route: FRouteOptions) => {
+        const before = uniqKeepOrder([
+          ...(root.__mwGlobalBefore ?? []),
+          ...(app.__mwInstanceBefore ?? []),
+        ]);
+
+        const after = uniqKeepOrder([
+          ...(root.__mwGlobalAfter ?? []),
+          ...(app.__mwInstanceAfter ?? []),
+        ]);
+
+        applyToRoute(route, before, after);
+      });
+    }
+  },
+  { name: "middlewaresPlugin" }
 );

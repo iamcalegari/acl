@@ -3,8 +3,8 @@ import Fastify, { FastifyInstance } from "fastify";
 import { RouteConfig, RouteOptions, ServerGuards, ServerMiddlewares, ServerSetupOptions } from "../types/fastify";
 import { defaultPublicPlugin } from "./plugins/default-public";
 import { guardsPlugin } from "./plugins/guards";
-import { moduleNamingPlugin } from './plugins/module-naming';
 import { middlewaresPlugin } from "./plugins/middlewares";
+import { moduleNamingPlugin } from './plugins/module-naming';
 
 export type SetupRoutesOptions = Omit<RouteConfig, 'path'>
 
@@ -26,31 +26,54 @@ export class Server {
   }
 
   public async init({ apiRoutes, publicRoutes }: ServerSetupOptions): Promise<void> {
+    // 1) Coleta todos os middlewares globais (api + public)
+    const apiMws = apiRoutes?.middlewares ?? [];
+    const pubMws = publicRoutes?.middlewares ?? [];
+
+    const { global: apiGlobal } = this.splitMiddlewaresByScope(apiMws);
+    const { global: pubGlobal } = this.splitMiddlewaresByScope(pubMws);
+
+    const allGlobal = [...apiGlobal, ...pubGlobal];
+    console.log(`\n\n GLOBAL MIDDLEWARES:`, allGlobal, `\n\n`);
+
+    // 2) Registra o plugin de middlewares no ROOT antes de qualquer rota
+    await this.app.register(middlewaresPlugin, { root: this.app, middlewares: allGlobal });
+
+
+    // 3) Agora registra os escopos normalmente (api/public)
     console.log("Setting up private routes on path: " + apiRoutes?.path + "...");
     if (apiRoutes) {
       const { path, allowRouteControl = false, options, guards = {}, middlewares = [] } = apiRoutes;
 
-      await this.setupFastify(path,
-        {
-          routeOptions: { allowRouteControl, options },
-          guardsOptions: guards,
-          middlewaresOptions: middlewares,
-          defaultPublicOptions: { force: true }
-        }
-      );
-    } else console.warn("API path not provided. Skipping route setup...");
+      const { instance: apiInstance } = this.splitMiddlewaresByScope(middlewares);
+
+      await this.setupFastify(path, {
+        routeOptions: { allowRouteControl, options },
+        guardsOptions: guards,
+        middlewaresOptions: apiInstance,      // ✅ só instance aqui
+        defaultPublicOptions: { force: true },
+      });
+    } else {
+      console.warn("API path not provided. Skipping route setup...");
+    }
 
     console.log("Setting up public routes on path: " + publicRoutes?.path + "...");
     if (publicRoutes) {
       const { path, allowRouteControl = false, options, guards = {}, middlewares = [] } = publicRoutes;
 
+      const { instance: pubInstance } = this.splitMiddlewaresByScope(middlewares);
+
+      console.log(`\n\n PUBLIC MIDDLEWARES:`, pubInstance, `\n\n`);
+
       await this.setupFastify(path, {
         routeOptions: { allowRouteControl, options },
         guardsOptions: guards,
-        middlewaresOptions: middlewares,
-        defaultPublicOptions: { force: false }
+        middlewaresOptions: pubInstance,      // ✅ só instance aqui
+        defaultPublicOptions: { force: false },
       });
-    } else console.warn("Public path not provided. Skipping route setup...");
+    } else {
+      console.warn("Public path not provided. Skipping route setup...");
+    }
   }
 
   public getApp(): FastifyInstance {
@@ -65,51 +88,51 @@ export class Server {
 
   private async setRoutes(app: FastifyInstance, routesPath: string, { options }: { options?: RouteOptions } = {}) {
     console.log(`Registering routes from path: ${routesPath}...`);
-    await app.register(AutoLoad, { dir: routesPath, dirNameRoutePrefix: false, maxDepth: 3, autoHooks: true, cascadeHooks: true, ...options });
+    await app.register(AutoLoad, { dir: routesPath, dirNameRoutePrefix: false, maxDepth: 3, ...options });
   }
 
 
-  private async setPlugins(app: FastifyInstance, guardsOptions: ServerGuards, defaultPublicOptions: Parameters<typeof defaultPublicPlugin>[1] = {}, middlewaresOptions: ServerMiddlewares[] = []) {
-
-
-    console.log(`\t\t\tRegistering guards ${Object.keys(guardsOptions).join(', ')} plugins...`);
+  private async setPlugins(
+    app: FastifyInstance,
+    guardsOptions: ServerGuards,
+    defaultPublicOptions: Parameters<typeof defaultPublicPlugin>[1] = {},
+    middlewaresOptions: ServerMiddlewares[] = []
+  ) {
     await app.register(guardsPlugin, {
-      root: this.app,           // passa a instância global para o plugin de guards
-      guards: guardsOptions,
-    });                         // expõe jwtGuard/aclGuard
-
-    console.log(`\t\t\tRegistering default public plugin with options: ${JSON.stringify(defaultPublicOptions)}...`);
-    await app.register(defaultPublicPlugin, defaultPublicOptions);   // seta as rotas como default public
-
-    console.log(`\t\t\tRegistering module naming plugin...`);
-    await app.register(moduleNamingPlugin, defaultPublicOptions);                          // injeta nas rotas marcadas
-
-    // middlewares globais (sem strategy, ou strategy "beforeAllGuards" para aplicar antes dos guards, ou "afterAllGuards" para aplicar depois dos guards)
-    console.log(`\t\t\tRegistering middlewares plugins...`);
-    // middlewares globais (aplicados a todas as rotas, antes ou depois dos guards)
-    // middlewares específicos de guards (definidos na configuração do guard, aplicados apenas às rotas protegidas por aquele guard)
-    // middlewares específicos de rota (definidos na configuração da rota, aplicados apenas àquela rota)
-    // ordem de aplicação: middlewares globais -> middlewares de guards -> middlewares de rota
-    // dentro de cada categoria, a ordem é definida pela configuração (ex: strategy para globais, ou ordem no array para guards/rota)
-
-    // exemplo: se um guard tem um middleware com strategy "beforeAllGuards", ele será aplicado antes dos guards, mas depois dos middlewares globais com strategy "beforeAllGuards". Se for "afterAllGuards", será aplicado depois dos guards, mas antes dos middlewares globais com strategy "afterAllGuards".
-
-    await app.register(middlewaresPlugin, {
       root: this.app,
-      middlewares: middlewaresOptions,
+      guards: guardsOptions,
     });
 
-    console.log(`\t\t\tAll plugins registered.`);
+    await app.register(defaultPublicPlugin, defaultPublicOptions);
+
+    // ✅ moduleNaming aplica guards (setGuardsRoute) e monta o chain
+    await app.register(moduleNamingPlugin, defaultPublicOptions);
+
+    // ✅ agora “abraça” com before/after (instance do escopo + globais do root)
+    if (middlewaresOptions.length > 0) {
+      await app.register(middlewaresPlugin, {
+        root: this.app,
+        middlewares: middlewaresOptions, // aqui só instance (já filtrado no init)
+      });
+    }
   }
 
   private async setupFastify(routesPath: string, { routeOptions, guardsOptions, defaultPublicOptions, middlewaresOptions }: SetupFastifyOptions = {}) {
     await this.app.register(async (app) => {
-
       await this.setPlugins(app, guardsOptions || {}, { ...defaultPublicOptions, options: routeOptions || {} }, middlewaresOptions || []);
 
       await this.setRoutes(app, routesPath, { options: routeOptions?.options });
     })
   }
 
+  private splitMiddlewaresByScope(mws: ServerMiddlewares[] = []) {
+    const global: ServerMiddlewares[] = [];
+    const instance: ServerMiddlewares[] = [];
 
+    for (const mw of mws) {
+      (mw.scope === "global" ? global : instance).push(mw);
+    }
+
+    return { global, instance };
+  };
 }

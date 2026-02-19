@@ -13,8 +13,7 @@ export const defaultPublicPlugin: FastifyPluginAsync = fp(async (app, { force, o
     const { isPublic } = cfg;
     route.config = { ...cfg, isPublic: isPublic ?? !force };
 
-    // console.log('DEFAULT PUBLIC PLUGIN - ON ROUTE: ', route.url, 'CONFIG: ', route.config, 'FORCE: ', force, 'GUARDS: ', app?.guards);
-
+    console.log('\n[DEFAULT PUBLIC PLUGIN] ON ROUTE: ', route.url, 'CONFIG: ', route.config, 'FORCE: ', force, 'GUARDS: ', app?.guards);
     route.config = setGuardsRoute(app, route, { jwtGuard: app?.guards?.jwtGuard?.preHandler }, force ?? false);
   });
 });

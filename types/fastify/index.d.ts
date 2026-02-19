@@ -74,7 +74,7 @@ export type RouteOptions = {
   prefix?: string;
 }
 
-export type SetupRoutesPluginOptions = { allowRouteControl?: boolean; }
+export type SetupRoutesPluginOptions = { allowRouteControl?: boolean }
 
 export type RouteConfig = {
   path: string,

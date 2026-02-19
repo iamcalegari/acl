@@ -1,8 +1,8 @@
 import type { FastifyInstance, FastifyPluginAsync, RouteOptions } from "fastify";
 import fp from "fastify-plugin";
 import { RoutesGuards, SetupRoutesPluginOptions } from '../../types/fastify';
-import { setGuardsRoute } from "./helpers/route-visibility.helpers";
 import { getRouteConfig } from "./helpers/route-config.helpers";
+import { setGuardsRoute } from "./helpers/route-visibility.helpers";
 
 const kModuleName = Symbol("moduleName");
 const kSubModuleName = Symbol("subModuleName");
@@ -30,7 +30,7 @@ declare module "fastify" {
 export const moduleNamingPlugin: FastifyPluginAsync<ModuleConfig> = fp(async (app, { options }: { options?: SetupRoutesPluginOptions } = {}) => {
 
   if (app[kHookInstalled] || app[kModuleName] !== undefined || app[kSubModuleName] !== undefined) {
-    console.log(`Module: ${app[kModuleName]} \nSubModule: ${app[kSubModuleName]}`);
+    console.log(`[moduleNamingPlugin] Module: ${app[kModuleName]} \nSubModule: ${app[kSubModuleName]}`);
     console.warn("moduleNamingPlugin already installed");
     return;
   }
@@ -46,10 +46,13 @@ export const moduleNamingPlugin: FastifyPluginAsync<ModuleConfig> = fp(async (ap
     app[kHookInstalled] = true;
 
     app.addHook("onRoute", (routeOptions: RouteOptions) => {
+
       const current = getRouteConfig(routeOptions, options);
 
       const module = app[kModuleName] || current.module || '*' as string;
       const subModule = app[kSubModuleName] || current.subModule || '*' as string;
+
+      console.log('\n[MODULE NAMING PLUGIN] applying guards for route', routeOptions.url, { module, subModule, guards: current.guards });
 
       // Se o plugin NÃO definiu module/subModule nesse escopo:
       // => default é rota pública (isPublic: true), sem mexer em module/subModule.
@@ -75,7 +78,6 @@ export const moduleNamingPlugin: FastifyPluginAsync<ModuleConfig> = fp(async (ap
 
       const { jwtGuard, aclGuard } = app?.guards || {};
 
-      //  console.log('moduleNamingPlugin applying guards for route', routeOptions.url, { module, subModule, guards: current.guards });
       routeOptions.config = setGuardsRoute(app, routeOptions, { jwtGuard: jwtGuard?.preHandler, aclGuard: aclGuard?.preHandler });
     })
   }

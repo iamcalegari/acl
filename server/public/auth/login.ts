@@ -48,7 +48,8 @@ export const login: FastifyPluginAsync = async (fastify) => {
         ...routeOptions,
         config: {
           ...routeOptions.config,
-          guards: [...(routeOptions.config.guards || new Set())]
+          guards: [...(routeOptions.config.guards || new Set())],
+          debugMiddlewares: [...(routeOptions.config.debugMiddlewares || new Set())]
         }
       };
     } catch (error) {

@@ -1,5 +1,6 @@
 import { FastifyInstance, RouteOptions } from "fastify";
 import { GuardFunction, GuardName, ModuleConfig } from "../../../types/fastify";
+import { setMiddlewares } from "./middlewares.helpers";
 
 
 // TODO: improve it
@@ -11,7 +12,7 @@ export const setGuardsRoute = (target: FastifyInstance, route: RouteOptions, rou
   let guards = new Set<GuardFunction>();
 
   const { isPublic, url, ...cfg } = needsGuards(route, force);
-
+  console.log('[SET GUARDS] force:', force, 'url:', url, 'isPublic:', isPublic, 'cfg:', cfg);
   if (isPublic) {
     return { ...cfg, isPublic: true };
   }
@@ -19,7 +20,7 @@ export const setGuardsRoute = (target: FastifyInstance, route: RouteOptions, rou
   const { guardsToSet, alreadyGuards: newAlreadyGuards, } = setupGuards(routeGuards, cfg.guards, guards);
 
   guards = guardsToSet;
-  const { config: newConfig } = setMiddlewares(target, route, ...guards);
+  const { config: newConfig } = setMiddlewares(target, route, [...guards]);
 
   // console.log('[SET GUARDS] new CONFIG: ', JSON.stringify({ ...newConfig, guards: [...newAlreadyGuards], isPublic: false }, null, 2), 'FOR ROUTE: ', url);
 
@@ -43,24 +44,6 @@ const setupGuards = (guards: Partial<RouteGuardsPlugins> = {}, alreadyGuards: Se
   }
 
   return { guardsToSet, alreadyGuards };
-}
-
-export const setMiddlewares = (target: FastifyInstance, routeOptions: RouteOptions, ...guards: GuardFunction[]) => {
-  console.log('\n\n[SET GUARDS] middlewares to set:', guards);
-
-  const _guards = Array.from(new Set([...guards.flat()]));
-
-  const preHandlersSet = new Set(Array.isArray(routeOptions.preHandler) ? routeOptions.preHandler : [routeOptions.preHandler]);
-  const beforeAndAfterMiddlewaresSet = new Set([...target.beforeAllMiddlewares || [], ...target.afterAllMiddlewares || []]);
-  const existingPreHandlersOnly: GuardFunction[] = Array.from(preHandlersSet.difference(beforeAndAfterMiddlewaresSet)).filter((fn): fn is GuardFunction => fn !== undefined)
-  console.log('[SET GUARDS] existing preHandler:', existingPreHandlersOnly);
-
-  routeOptions.preHandler = existingPreHandlersOnly.length > 0
-    ? [...target.beforeAllMiddlewares || [], ...existingPreHandlersOnly, ..._guards, ...target.afterAllMiddlewares || []]
-    : [...target.beforeAllMiddlewares || [], ..._guards, ...target.afterAllMiddlewares || []];
-
-  console.log('[SET GUARDS] new preHandler:', routeOptions.preHandler, '\n\n');
-  return routeOptions;
 }
 
 // TODO: improve it

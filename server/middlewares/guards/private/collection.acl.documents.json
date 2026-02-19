@@ -17,6 +17,11 @@
       {
         "effect": "ALLOW",
         "action": "*",
+        "module": "*:*"
+      },
+      {
+        "effect": "ALLOW",
+        "action": "*",
         "module": "module-a:*"
       },
       {
@@ -30,6 +35,11 @@
     "_id": "3",
     "role": "MANAGER",
     "policies": [
+      {
+        "effect": "ALLOW",
+        "action": "*",
+        "module": "debug:*"
+      },
       {
         "effect": "ALLOW",
         "action": "*",
