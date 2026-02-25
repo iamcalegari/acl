@@ -88,7 +88,7 @@ export const middlewaresPlugin: FastifyPluginAsync<MiddlewaresPluginOpts> = fp(
   async (app: FastifyInstance, opts: MiddlewaresPluginOpts) => {
     const { root, middlewares = [] } = opts;
 
-    // ✅ garante arrays como OWN PROPERTY (evita “vazar” instance entre escopos)
+    //  garante arrays como OWN PROPERTY (evita “vazar” instance entre escopos)
     ensureOwnArray(root, "__mwGlobalBefore");
     ensureOwnArray(root, "__mwGlobalAfter");
     ensureOwnArray(app, "__mwInstanceBefore");

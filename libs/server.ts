@@ -50,7 +50,7 @@ export class Server {
       await this.setupFastify(path, {
         routeOptions: { allowRouteControl, options },
         guardsOptions: guards,
-        middlewaresOptions: apiInstance,      // ✅ só instance aqui
+        middlewaresOptions: apiInstance,      //  só instance aqui
         defaultPublicOptions: { force: true },
       });
     } else {
@@ -68,7 +68,7 @@ export class Server {
       await this.setupFastify(path, {
         routeOptions: { allowRouteControl, options },
         guardsOptions: guards,
-        middlewaresOptions: pubInstance,      // ✅ só instance aqui
+        middlewaresOptions: pubInstance,      //  só instance aqui
         defaultPublicOptions: { force: false },
       });
     } else {
@@ -105,10 +105,10 @@ export class Server {
 
     await app.register(defaultPublicPlugin, defaultPublicOptions);
 
-    // ✅ moduleNaming aplica guards (setGuardsRoute) e monta o chain
+    // moduleNaming aplica guards (setGuardsRoute) e monta o chain
     await app.register(moduleNamingPlugin, defaultPublicOptions);
 
-    // ✅ agora “abraça” com before/after (instance do escopo + globais do root)
+    // agora “abraça” com before/after (instance do escopo + globais do root)
     if (middlewaresOptions.length > 0) {
       await app.register(middlewaresPlugin, {
         root: this.app,
