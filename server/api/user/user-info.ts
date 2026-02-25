@@ -1,26 +1,19 @@
 import { FastifyPluginAsync } from "fastify";
 import { buildAclIndexFromACL } from "../../helpers/acl.helpers";
 
-export const me: FastifyPluginAsync = async (fastify) => {
-  fastify.module('me');
-
-  fastify.get('/me',
-    async ({ user, acl, routeOptions }, res) => {
-
-      const { resources: aclResources } = buildAclIndexFromACL(acl);
-
+export const userInfo: FastifyPluginAsync = async (fastify) => {
+  fastify.get('/user/me',
+    async ({ user, routeOptions }, res) => {
       res.status(200).send({
         status: 'ok',
         data: {
-          aclResources,
+          user,
           ...routeOptions,
           config: {
             ...routeOptions.config,
             guards: [...(routeOptions.config.guards || new Set())],
             debugMiddlewares: [...(routeOptions.config.debugMiddlewares || new Set())]
-          },
-          user,
-          acl,
+          }
         }
       })
     })

@@ -24,7 +24,7 @@ export const guardsPlugin = fp(
 
       // 2) Enfileira dependências (não registra aqui ainda)
       for (const { options, ...dep } of dependencies) {
-        const { middlewares, plugin } = dep;
+        const { middlewares, plugin, middlewaresStrategy = 'before' } = dep;
 
         const scope: DependencyScope = dep.scope ?? "instance";
         const name = normalizeDependencyName(dep, guardName);
@@ -32,7 +32,9 @@ export const guardsPlugin = fp(
         if (middlewares) {
           const middlewaresArray = Array.isArray(middlewares) ? middlewares : [middlewares];
 
-          guard = [...middlewaresArray, ...guard];
+          guard = middlewaresStrategy === 'before'
+            ? [...middlewaresArray, ...guard]
+            : [...guard, ...middlewaresArray];
         }
 
         // se já existir, respeita o primeiro (evita sobrescrever config)

@@ -88,7 +88,7 @@ export class Server {
 
   private async setRoutes(app: FastifyInstance, routesPath: string, { options }: { options?: RouteOptions } = {}) {
     console.log(`Registering routes from path: ${routesPath}...`);
-    await app.register(AutoLoad, { dir: routesPath, dirNameRoutePrefix: false, maxDepth: 3, ...options });
+    await app.register(AutoLoad, { dir: routesPath, dirNameRoutePrefix: false, maxDepth: 3, options });
   }
 
 

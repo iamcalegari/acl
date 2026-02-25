@@ -87,6 +87,7 @@ export const serverConfig: ServerSetupOptions = {
           }
         ]
       },
+
     },
 
     /**
@@ -125,6 +126,9 @@ export const serverConfig: ServerSetupOptions = {
   },
   publicRoutes: {
     path: publicPath,
+    options: {
+      prefix: '/api',
+    },
     middlewares: [
       {
         handlers: loggerMiddleware3,

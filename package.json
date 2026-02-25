@@ -5,7 +5,8 @@
   "author": "iamcalegari",
   "license": "MIT",
   "scripts": {
-    "start": "nodemon --watch . --ext ts --exec tsx ./server/index.ts"
+    "start:server": "nodemon --watch . --ext ts --exec tsx ./server/index.ts",
+    "start:app": "cd app && yarn dev"
   },
   "devDependencies": {
     "@fastify/auth": "^5.0.4",

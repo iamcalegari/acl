@@ -16,8 +16,13 @@
     "policies": [
       {
         "effect": "ALLOW",
-        "action": "*",
+        "action": "read",
         "module": "*:*"
+      },
+      {
+        "effect": "DENY",
+        "action": "*",
+        "module": "module-b:submodule-y"
       },
       {
         "effect": "ALLOW",
@@ -27,7 +32,7 @@
       {
         "effect": "ALLOW",
         "action": "readOnly",
-        "module": "module-b:*"
+        "module": "module-a:submodule-y"
       }
     ]
   },
@@ -38,18 +43,17 @@
       {
         "effect": "ALLOW",
         "action": "*",
-        "module": "debug:*"
+        "module": "me:*"
       },
       {
         "effect": "ALLOW",
-        "action": "*",
-        "module": ["module-a:*", "module-b:submodule-x"]
+        "action": "writeOnly",
+        "module": ["module-a:submodule-x", "module-b:submodule-x"]
       },
       {
         "effect": "ALLOW",
         "action": "readOnly",
-        "scope": "scopeId",
-        "module": "module-b:submodule-y"
+        "module": "module-a:submodule-y"
       }
     ]
   }

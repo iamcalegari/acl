@@ -15,6 +15,8 @@ export type GuardDependency = {
   plugin?: FastifyPluginCallback<any>;
   middlewares?: preHandlerHookHandler | preHandlerHookHandler[];
 
+  middlewaresStrategy?: 'before' | 'after';
+
   /** @default 'instance' */
   scope?: DependencyScope;
 
