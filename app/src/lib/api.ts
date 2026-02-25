@@ -1,4 +1,4 @@
-const API_BASE = ""; // com proxy do Vite, podemos usar caminho relativo (/api/...)
+const API_BASE = ""; // com proxy do Vite, caminho relativo (/api/...)
 
 export function getAccessToken() {
   return localStorage.getItem("accessToken");
@@ -26,7 +26,7 @@ export async function apiFetch<T>(
   const res = await fetch(`${API_BASE}${path}`, {
     ...init,
     headers,
-    credentials: "include", // se você também usar cookie em algum momento
+    credentials: "include", // caso use cookie em algum momento
   });
 
   if (!res.ok) {

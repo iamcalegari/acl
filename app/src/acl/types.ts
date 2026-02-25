@@ -8,7 +8,6 @@ export type Policy = {
   subModule?: string | string[];
   scope?: string;
 
-  // backend já manda esses normalizados:
   __actions?: PolicyAction[];
   __modules?: Array<{ module: string; subModule: string }>;
 };
@@ -32,17 +31,17 @@ export type MePayload = {
 };
 
 export type CanArgs = {
-  action: PolicyAction;      // ex: "readOnly", "*"
-  resource: string;    // ex: "module-b:submodule-y"
-  scope?: string;      // opcional
+  action: PolicyAction;   // ex: "readOnly", "*"
+  resource: string;       // ex: "module-b:submodule-y"
+  scope?: string;         // opcional
 };
 
 
 export type ResourceRule = {
-  name: string; // "module-a:submodule-x" | "module-a:*" | "*:*"
+  name: string;           // "module-a:submodule-x" | "module-a:*" | "*:*"
   actions: {
-    allowed: string[]; // ex ["read","create"] ou ["*"]
-    denied: string[];  // ex ["delete"] ou ["*"]
+    allowed: string[];    // ex ["read","create"] ou ["*"]
+    denied: string[];     // ex ["delete"] ou ["*"]
   };
 };
 

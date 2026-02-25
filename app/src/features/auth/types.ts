@@ -4,7 +4,7 @@ export type LoginRequest = {
   id: string;
   email: string;
   senha: string;
-  acl?: string; // opcional no schema? (no required não está)
+  acl?: string;
 };
 
 export type LoginResponse = {
@@ -18,7 +18,6 @@ export type LoginResponse = {
     debugMiddlewares?: string[];
   };
 
-  // podem vir outros campos do routeOptions; não precisamos tipar tudo
   [key: string]: unknown;
 };
 
@@ -46,21 +45,20 @@ export type MeData = {
     }>;
   };
   config?: unknown;
-  aclResources: AclResources; // <-- AQUI
+  aclResources: AclResources;
   [k: string]: unknown;
 };
 
 
 
 export type AclResourcesRule = {
-  name: string; // ex: "module-a:submodule-x" | "module-a:*" | "*:*"
+  name: string;           // ex: "module-a:submodule-x" | "module-a:*" | "*:*"
   actions: {
-    allowed: string[]; // ex ["read"] ou ["*"]
-    denied: string[];  // ex ["delete"] ou ["*"]
+    allowed: string[];    // ex ["read"] ou ["*"]
+    denied: string[];     // ex ["delete"] ou ["*"]
   };
 };
 
 export type AclResources = AclResourcesRule[];
 
-// seu /me agora (no formato do seu backend)
 export type ApiOk<T> = { status: "ok"; data: T };

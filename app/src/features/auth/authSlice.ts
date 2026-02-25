@@ -12,7 +12,7 @@ type AuthState = {
   accessToken: string | null;
   error?: string;
   acl?: ACL;
-  aclResources?: AclResources; // <-- novo
+  aclResources?: AclResources;
 };
 
 
@@ -22,13 +22,12 @@ const initialState: AuthState = {
   accessToken: localStorage.getItem("accessToken"),
   error: undefined,
   acl: undefined,
-  aclResources: undefined, // <-- novo
+  aclResources: undefined,
 };
 
 export const login = createAsyncThunk(
   "/auth/login",
   async (payload: LoginRequest) => {
-    // seu endpoint é POST /login
     const data = await apiFetch<LoginResponse>("/api/auth/login", {
       method: "POST",
       body: JSON.stringify(payload),
@@ -42,7 +41,7 @@ export const login = createAsyncThunk(
 
 export const fetchMe = createAsyncThunk("auth/fetchMe", async () => {
   const res = await apiFetch<ApiOk<MeData>>("/api/me");
-  return res.data; // <-- aqui está o fix
+  return res.data;
 });
 
 const authSlice = createSlice({
@@ -53,7 +52,7 @@ const authSlice = createSlice({
       state.status = "unauthenticated";
       state.me = null;
       state.acl = undefined;
-      state.aclResources = undefined; // <-- novo
+      state.aclResources = undefined;
       state.accessToken = null;
       state.error = undefined;
       clearAccessToken();
@@ -85,7 +84,7 @@ const authSlice = createSlice({
         state.status = "authenticated";
         state.me = action.payload;
         state.acl = action.payload.acl;
-        state.aclResources = action.payload.aclResources; // <-- novo
+        state.aclResources = action.payload.aclResources;
       })
       .addCase(fetchMe.rejected, (state, action) => {
         state.status = "unauthenticated";
