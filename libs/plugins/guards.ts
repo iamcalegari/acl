@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import fp from "fastify-plugin";
 import { DependencyScope, GuardDefinition, GuardName, GuardsRegistryItem, ServerGuards } from "../../types/fastify";
-import { normalizeDependencyName, registerGuardsDependencies } from "./helpers/plugin.helpers";
+import { normalizeDependencyName, registerGuardsDependencies } from "./helpers/plugins.helpers";
 
 export const guardsPlugin = fp(
   async (app, { root, guards }: { root: FastifyInstance, guards: ServerGuards }) => {
@@ -15,7 +15,8 @@ export const guardsPlugin = fp(
     // 1) Registra guards (apenas metadados + preHandler guard)
     for (const [guardName, def] of Object.entries({ ...guards })) {
       const guardDef = def as GuardDefinition;
-      let guard = [guardDef.guard];
+      let handlers = !Array.isArray(guardDef.handlers) ? [guardDef.handlers] : guardDef.handlers;
+
       const dependencies = guardDef.dependencies ?? [];
       const scope = guardDef.scope ?? "instance";
 
@@ -32,9 +33,9 @@ export const guardsPlugin = fp(
         if (middlewares) {
           const middlewaresArray = Array.isArray(middlewares) ? middlewares : [middlewares];
 
-          guard = middlewaresStrategy === 'before'
-            ? [...middlewaresArray, ...guard]
-            : [...guard, ...middlewaresArray];
+          handlers = middlewaresStrategy === 'before'
+            ? [...middlewaresArray, ...handlers]
+            : [...handlers, ...middlewaresArray];
         }
 
         // se já existir, respeita o primeiro (evita sobrescrever config)
@@ -52,7 +53,7 @@ export const guardsPlugin = fp(
       }
 
       const guardCfg: GuardsRegistryItem = {
-        preHandler: guard,
+        preHandler: handlers,
         type: "guard",
         registered: true,
         scope: scope,

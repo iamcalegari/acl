@@ -6,7 +6,7 @@ export type PluginScope = "global" | "instance";
 
 export type DependencyScope = PluginScope;
 
-export type GuardName = 'jwtGuard' | 'aclGuard';
+export type GuardName = 'auth' | 'authorization' | 'acl';
 export type MiddlewareName = 'aclCache' | 'loggerMiddleware' | string; // permite middlewares nomeados dinamicamente
 
 export type GuardFunction = preHandlerHookHandler;
@@ -25,7 +25,7 @@ export type GuardDependency = {
 };
 
 export type GuardDefinition = {
-  guard: GuardFunction;
+  handlers: GuardFunction | GuardFunction[];
   scope?: PluginScope;
   dependencies?: GuardDependency[];
 };
@@ -61,10 +61,14 @@ type MiddlewaresRegistryItem = {
   strategy: 'beforeAllGuards' | 'afterAllGuards';
 };
 
+export type GuardsRegistry = Partial<Record<GuardName, GuardsRegistryItem>>;
+export type MiddlewaresRegistry = Partial<Record<MiddlewareName, MiddlewaresRegistryItem>>;
+export type PluginsRegistry = Record<string, PluginsRegistryItem>;
+
 export type RoutesGuards = {
-  guards: Partial<Record<GuardName, GuardsRegistryItem>>;
-  middlewares: Partial<Record<MiddlewareName, MiddlewaresRegistryItem>>;
-  plugins: Record<string, PluginsRegistryItem>;
+  guards: GuardsRegistry;
+  middlewares: MiddlewaresRegistry;
+  plugins: PluginsRegistry;
 };
 
 export type ServerGuards = { [key in GuardName]?: GuardDefinition };

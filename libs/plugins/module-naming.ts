@@ -2,7 +2,7 @@ import type { FastifyInstance, FastifyPluginAsync, RouteOptions } from "fastify"
 import fp from "fastify-plugin";
 import { RoutesGuards, SetupRoutesPluginOptions } from '../../types/fastify';
 import { getRouteConfig } from "./helpers/route-config.helpers";
-import { setGuardsRoute } from "./helpers/route-visibility.helpers";
+import { setGuardsRoute } from "./helpers/guards.helpers";
 
 const kModuleName = Symbol("moduleName");
 const kSubModuleName = Symbol("subModuleName");
@@ -76,9 +76,9 @@ export const moduleNamingPlugin: FastifyPluginAsync<ModuleConfig> = fp(async (ap
         subModule: current.subModule ?? subModule,
       };
 
-      const { jwtGuard, aclGuard } = app?.guards || {};
+      const { acl } = app?.guards || {};
 
-      routeOptions.config = setGuardsRoute(app, routeOptions, { jwtGuard: jwtGuard?.preHandler, aclGuard: aclGuard?.preHandler });
+      routeOptions.config = setGuardsRoute(app, routeOptions, { acl });
     })
   }
 

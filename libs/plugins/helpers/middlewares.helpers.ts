@@ -107,81 +107,91 @@ export function setMiddlewares(
 ) {
   const cfg = ((routeOptions.config ?? {}) as any) as RouteControlConfig;
 
-  console.log('\n[1] TARGET MIDDLEWARES', target.middlewares);
+  // console.log('\n[1] TARGET MIDDLEWARES', target.middlewares);
 
-  console.log('[1] TARGET GLOBAL BEFORE', target.__mwGlobalBefore);
-  console.log('[1] TARGET GLOBAL AFTER', target.__mwGlobalAfter);
+  // console.log('[1] TARGET GLOBAL BEFORE', target.__mwGlobalBefore);
+  // console.log('[1] TARGET GLOBAL AFTER', target.__mwGlobalAfter);
 
-  console.log('[1] TARGET INSTANCE BEFORE', target.__mwInstanceBefore);
-  console.log('[1] TARGET INSTANCE AFTER', target.__mwInstanceAfter);
+  // console.log('[1] TARGET INSTANCE BEFORE', target.__mwInstanceBefore);
+  // console.log('[1] TARGET INSTANCE AFTER', target.__mwInstanceAfter);
 
 
-  console.log('[1] MIDDLEWARES', middlewares);
-  console.log('[1] ROUTE OPTIONS', routeOptions);
-  console.log('[1] CFG', cfg);
-  console.log('[1] BEFORE ALL MIDDLEWARES', beforeAllMiddlewares);
-  console.log('[1] AFTER ALL MIDDLEWARES', afterAllMiddlewares);
+  // console.log('[1] MIDDLEWARES', middlewares);
+  // console.log('[1] ROUTE OPTIONS', routeOptions);
+  // console.log('[1] CFG', cfg);
+  // console.log('[1] BEFORE ALL MIDDLEWARES', beforeAllMiddlewares);
+  // console.log('[1] AFTER ALL MIDDLEWARES', afterAllMiddlewares);
 
   // 1) coleta before/after cadastrados no target (plugins)
   const beforeCollected = collectStrategyMiddlewares(target, "beforeAllGuards", cfg);
   const afterCollected = collectStrategyMiddlewares(target, "afterAllGuards", cfg);
 
-  console.log('\n[2] BEFORE COLLECTED', beforeCollected);
-  console.log('[2] AFTER COLLECTED', afterCollected);
+  // console.log('\n[2] BEFORE COLLECTED', beforeCollected);
+  // console.log('[2] AFTER COLLECTED', afterCollected);
 
   // 2) inclui before/after passados por parâmetro (se você usar)
   const beforeExtra = toArray(beforeAllMiddlewares).flat().filter(isGuardFn);
   const afterExtra = toArray(afterAllMiddlewares).flat().filter(isGuardFn);
 
-  console.log('\n[3] BEFORE EXTRA', beforeExtra);
-  console.log('[3] AFTER EXTRA', afterExtra);
+  // console.log('\n[3] BEFORE EXTRA', beforeExtra);
+  // console.log('[3] AFTER EXTRA', afterExtra);
 
   const before = uniqKeepOrder([...beforeCollected.handlers, ...beforeExtra]);
   const after = uniqKeepOrder([...afterCollected.handlers, ...afterExtra]);
 
-  console.log('\n[4] BEFORE', before);
-  console.log('[4] AFTER', after);
+  // console.log('\n[4] BEFORE', before);
+  // console.log('[4] AFTER', after);
 
   // 3) separa o que já existia no preHandler, removendo before/after para não duplicar
   const existing = toArray(routeOptions.preHandler).filter(isGuardFn);
 
-  console.log('\n[5] EXISTING', existing);
+  // console.log('\n[5] EXISTING', existing);
 
   const edgeSet = new Set<GuardFunction>([...before, ...after]);
   const existingCore = existing.filter((fn) => !edgeSet.has(fn));
 
-  console.log('\n[6] EDGE SET', edgeSet);
-  console.log('[6] EXISTING CORE', existingCore);
+  // console.log('\n[6] EDGE SET', edgeSet);
+  // console.log('[6] EXISTING CORE', existingCore);
 
 
-  // 4) incoming (middlewares do guard, ex: aclCache + jwtGuard + aclGuard)
+  // 4) incoming (middlewares do guard, ex: jwtGuard + aclCache + aclGuard)
   const incoming = middlewares.flat().filter(isGuardFn);
+  const incomingSet = new Set(incoming);
 
-  console.log('\n[7] INCOMING', incoming);
+  // console.log('\n[7] INCOMING', incoming);
 
   // não repetir o que já está no core
+  // const existingCoreSet = new Set(existingCore);
+  // const incomingOnlyNew = incoming.filter((fn) => !existingCoreSet.has(fn));
+
+  // console.log('\n[8] EXISTING CORE SET', existingCoreSet);
+  // console.log('[8] INCOMING ONLY NEW', incomingOnlyNew);
+
   const existingCoreSet = new Set(existingCore);
-  const incomingOnlyNew = incoming.filter((fn) => !existingCoreSet.has(fn));
+  const existingCoreWithoutIncoming = existingCoreSet.difference(incomingSet);
 
-  console.log('\n[8] EXISTING CORE SET', existingCoreSet);
-  console.log('[8] INCOMING ONLY NEW', incomingOnlyNew);
+  // console.log('\n[1] INCOMING', incoming);
 
-  console.log('\n[9] UNIQ KEEP ORDER', [
-    ...before,
-    ...existingCore,
-    ...incomingOnlyNew,
-    ...after,
-  ]);
+  // console.log('\n[2] EXISTING CORE SET', [...existingCoreSet]);
+  // console.log('[2] INCOMING WITHOUT INCOMING', [...existingCoreWithoutIncoming]);
+
+
+  // console.log('\n[3] UNIQ KEEP ORDER', [
+  //   ...before,
+  //   ...existingCoreWithoutIncoming,
+  //   ...incomingSet,
+  //   ...after,
+  // ]);
 
   // 5) compose final determinístico
   routeOptions.preHandler = uniqKeepOrder([
     ...before,
-    ...existingCore,
-    ...incomingOnlyNew,
+    ...existingCoreWithoutIncoming,
+    ...incomingSet,
     ...after,
   ]);
 
-  console.log('\n[10] ROUTE OPTIONS PRE HANDLER', routeOptions.preHandler);
+  // console.log('\n[10] ROUTE OPTIONS PRE HANDLER', routeOptions.preHandler);
 
   // 6) debug: nomes dos middlewares aplicados (se o caller quiser usar)
   // - mantém Set
@@ -194,14 +204,14 @@ export function setMiddlewares(
 
   // cfg.debugMiddlewares = dbg;
 
-  console.log('\n[12] NEW CFG', cfg);
-  console.log('[12] ROUTE OPTIONS CONFIG', routeOptions.config);
+  // console.log('\n[12] NEW CFG', cfg);
+  // console.log('[12] ROUTE OPTIONS CONFIG', routeOptions.config);
 
   // garante que o config volte pro routeOptions.config
   routeOptions.config = { ...(routeOptions.config as any), ...cfg };
 
-  console.log('\n[13] NEW ROUTE OPTIONS CONFIG', routeOptions.config);
+  // console.log('\n[13] NEW ROUTE OPTIONS CONFIG', routeOptions.config);
 
-  console.log('\n[14] NEW ROUTE OPTIONS', routeOptions);
+  // console.log('\n[14] NEW ROUTE OPTIONS', routeOptions);
   return routeOptions;
 }

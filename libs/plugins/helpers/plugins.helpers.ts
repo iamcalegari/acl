@@ -11,6 +11,8 @@ export const normalizeDependencyName = (dep: GuardDependency, guardName: string)
 
 
 export const registerDependency = async (target: FastifyInstance, name: string, item: PluginsRegistryItem) => {
+  console.log('[REGISTER DEPENDENCY]', name);
+
   const isRegistred = target.hasPlugin(name);
 
   if (isRegistred) {

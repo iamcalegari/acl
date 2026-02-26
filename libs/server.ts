@@ -1,7 +1,7 @@
 import AutoLoad from "@fastify/autoload";
 import Fastify, { FastifyInstance } from "fastify";
 import { RouteConfig, RouteOptions, ServerGuards, ServerMiddlewares, ServerSetupOptions } from "../types/fastify";
-import { defaultPublicPlugin } from "./plugins/default-public";
+import { authGuardsPlugin } from "./plugins/auth-guards";
 import { guardsPlugin } from "./plugins/guards";
 import { middlewaresPlugin } from "./plugins/middlewares";
 import { moduleNamingPlugin } from './plugins/module-naming';
@@ -95,7 +95,7 @@ export class Server {
   private async setPlugins(
     app: FastifyInstance,
     guardsOptions: ServerGuards,
-    defaultPublicOptions: Parameters<typeof defaultPublicPlugin>[1] = {},
+    defaultPublicOptions: Parameters<typeof authGuardsPlugin>[1] = {},
     middlewaresOptions: ServerMiddlewares[] = []
   ) {
     await app.register(guardsPlugin, {
@@ -103,7 +103,7 @@ export class Server {
       guards: guardsOptions,
     });
 
-    await app.register(defaultPublicPlugin, defaultPublicOptions);
+    await app.register(authGuardsPlugin, defaultPublicOptions);
 
     // moduleNaming aplica guards (setGuardsRoute) e monta o chain
     await app.register(moduleNamingPlugin, defaultPublicOptions);

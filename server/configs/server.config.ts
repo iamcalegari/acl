@@ -40,8 +40,8 @@ export const serverConfig: ServerSetupOptions = {
      * essa ordem é definida dentro dos plugins onde os guards são registrados
      */
     guards: {
-      jwtGuard: {               /** NOME DO GUARD (ex: aclGuard) */
-        guard: jwtGuard,        /** FUNÇÃO DO GUARD (ex: aclGuard) */
+      auth: {                                 /** NOME DO GUARD (ex: aclGuard) */
+        handlers: [jwtGuard, loggerMiddleware2],        /** FUNÇÃO DO GUARD (ex: aclGuard) */
 
         /**
          * SCOPE DO GUARD (ex: instance ou global)
@@ -74,12 +74,13 @@ export const serverConfig: ServerSetupOptions = {
             scope: "global",
             options: {
               secret: process.env.JWT_SECRET || "default_secret",
-            }
+            },
+            middlewaresStrategy: "after"
           }
         ]
       },
-      aclGuard: {
-        guard: aclGuard,
+      acl: {
+        handlers: aclGuard,
         scope: "instance",
         dependencies: [
           {
@@ -117,11 +118,11 @@ export const serverConfig: ServerSetupOptions = {
          */
         strategy: "afterAllGuards",
       },
-      {
-        handlers: loggerMiddleware2,
-        scope: "instance",
-        strategy: "beforeAllGuards",
-      },
+      // {
+      //   handlers: loggerMiddleware2,
+      //   scope: "instance",
+      //   strategy: "beforeAllGuards",
+      // },
     ]
   },
   publicRoutes: {
